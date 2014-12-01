@@ -4,7 +4,7 @@ class SJ.ShaderLoader
 
   getShader: (name) ->
     if @shaders[name]
-      return Rx.just @shaders[name]
+      return Rx.Observable.just @shaders[name]
 
     return Rx.DOM.Request.get('./shaders/' + name)
       .map((data) -> data.responseText)

@@ -20,6 +20,9 @@ class SJ.WebGLController
     @gl.clear(@gl.COLOR_BUFFER_BIT | @gl.DEPTH_BUFFER_BIT)
 
   loadShader: (name) ->
+    if !name? then return
+
+    console.log "Loading #{name}"
     Rx.Observable.start(() => @gl.createProgram())
       .doOnNext (program) =>
         @program = program

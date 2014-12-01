@@ -1,5 +1,5 @@
 class SJ.AudioView
-  createView: (target, onMic, onUrl) ->
+  constructor: (target, onMic, onUrl) ->
     @audioPlayer = $ "<audio />",
       class: 'audio-player'
       controls: true
