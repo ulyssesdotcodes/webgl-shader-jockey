@@ -122,12 +122,12 @@ require('./interface/LibraryView.coffee');
 
 SJ.Main = (function() {
   function Main(isVisualizer) {
-    var canvas, url;
+    var canvas;
     canvas = $("<canvas>", {
       "class": 'fullscreen'
     });
     $('body').append(canvas);
-    this.audioView = new SJ.AudioView($('body'));
+    this.audioView = new SJ.AudioView($('body'), window.location.hash.substring(1));
     this.player = new SJ.Player();
     this.player.setPlayer(this.audioView.audioPlayer);
     this.webGLController = new SJ.WebGLController(canvas[0], new SJ.ShaderLoader());
@@ -144,9 +144,16 @@ SJ.Main = (function() {
         return _this.webGLController.update(audioEvent);
       };
     })(this));
-    url = window.location.hash !== "" ? "https://soundcloud.com/" + window.location.hash.substring(1) : "https://soundcloud.com/redviolin/swing-tape-3";
     this.soundCloudLoader = new SJ.SoundCloudLoader(this.audioView);
-    this.soundCloudLoader.loadStream(url);
+    this.audioView.mURLObservable.subscribe((function(_this) {
+      return function(url) {
+        if (url === SJ.AudioView.micUrl) {
+          _this.player.createLiveInput();
+          return;
+        }
+        return _this.soundCloudLoader.loadStream(url);
+      };
+    })(this));
     this.animate();
   }
 
@@ -576,8 +583,10 @@ SJ.WebGLController = (function() {
 
 },{}],7:[function(require,module,exports){
 SJ.AudioView = (function() {
-  function AudioView(target, onMic, onUrl) {
-    var micIcon;
+  AudioView.micUrl = "mic";
+
+  function AudioView(target, url) {
+    var micIcon, startUrl;
     this.audioPlayer = $("<audio />", {
       "class": 'audio-player',
       controls: true
@@ -594,10 +603,12 @@ SJ.AudioView = (function() {
     });
     this.mic.append(micIcon);
     this.controls.append(this.mic);
+    startUrl = !!url ? "https://soundcloud.com/" + url : "https://soundcloud.com/redviolin/swing-tape-3";
+    this.mURLObservable = new Rx.BehaviorSubject(startUrl);
     this.mic.click((function(_this) {
       return function(e) {
         e.preventDefault();
-        return onMic();
+        return _this.mURLObservable.onNext(SJ.AudioView.micUrl);
       };
     })(this));
     this.input = $("<input>", {
@@ -607,7 +618,7 @@ SJ.AudioView = (function() {
     this.controls.append(this.input);
     this.input.change((function(_this) {
       return function(e) {
-        return onUrl(_this.input.val());
+        return _this.mURLObservable.onNext(_this.input.val());
       };
     })(this));
     this.controls.append(this.audioPlayer);

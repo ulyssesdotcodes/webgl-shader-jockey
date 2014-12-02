@@ -18,7 +18,7 @@ class SJ.Main
 
     $('body').append canvas
 
-    @audioView = new SJ.AudioView($('body'))
+    @audioView = new SJ.AudioView($('body'), window.location.hash.substring(1))
     
     @player = new SJ.Player()
     @player.setPlayer @audioView.audioPlayer
@@ -35,16 +35,15 @@ class SJ.Main
     @audioProcessor.audioEventObservable()
       .subscribe (audioEvent) =>
         @webGLController.update audioEvent
-    
-    url = 
-      if window.location.hash != ""
-        "https://soundcloud.com/" + window.location.hash.substring(1)
-      else
-        "https://soundcloud.com/redviolin/swing-tape-3"
 
     @soundCloudLoader = new SJ.SoundCloudLoader(@audioView)
-    @soundCloudLoader.loadStream url
 
+    @audioView.mURLObservable.subscribe (url) =>
+      if url == SJ.AudioView.micUrl
+        @player.createLiveInput()
+        return
+      @soundCloudLoader.loadStream url
+      
     @animate()
 
   animate: () ->

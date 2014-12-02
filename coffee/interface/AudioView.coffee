@@ -1,5 +1,7 @@
 class SJ.AudioView
-  constructor: (target, onMic, onUrl) ->
+  @micUrl: "mic"
+  
+  constructor: (target, url) ->
     @audioPlayer = $ "<audio />",
       class: 'audio-player'
       controls: true
@@ -17,9 +19,12 @@ class SJ.AudioView
     @mic.append micIcon
     @controls.append @mic
 
+    startUrl = if !!url then "https://soundcloud.com/" + url else "https://soundcloud.com/redviolin/swing-tape-3";
+    @mURLObservable = new Rx.BehaviorSubject(startUrl)
+        
     @mic.click (e) =>
       e.preventDefault()
-      onMic()
+      @mURLObservable.onNext SJ.AudioView.micUrl
 
     @input = $ "<input>",
       class: 'soundcloud-input'
@@ -27,7 +32,7 @@ class SJ.AudioView
     @controls.append @input
 
     @input.change (e) =>
-      onUrl(@input.val())
+      @mURLObservable.onNext @input.val()
 
     @controls.append @audioPlayer
     target.append @controls
