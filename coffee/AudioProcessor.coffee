@@ -1,5 +1,5 @@
 class SJ.AudioProcessor
-  @bufferSize: 512
+  @bufferSize: 1024
 
   constructor: () ->
     @responsiveness = 1

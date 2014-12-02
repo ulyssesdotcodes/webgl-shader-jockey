@@ -57,6 +57,7 @@ class SJ.WebGLController
     @gl.useProgram @program
     
     @gl.uniform2f @program.uniformsCache['resolution'], @canvas.width, @canvas.height
+    @gl.uniform1f @program.uniformsCache['audioResolution'], SJ.AudioProcessor.bufferSize
     @gl.uniform1f @program.uniformsCache['time'], (audioEvent.time) / 1000.0
     @gl.uniform1i @program.uniformsCache['audioTexture'], 0
 
