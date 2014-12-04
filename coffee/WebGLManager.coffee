@@ -24,15 +24,12 @@ class SJ.WebGLController
 
     console.log "Loading #{name}"
     Rx.Observable.start(() => @gl.createProgram())
-      .doOnNext (program) =>
-        @program = program
       .zip \
         @shaderLoader.getShader(name + ".vert") \
           .map((data) => @createShader(@gl.VERTEX_SHADER, data))
       , @shaderLoader.getShader(name + ".frag") \
           .map((data) => @createShader(@gl.FRAGMENT_SHADER, data))
-      , (program, vs, fs) -> return { program: program, vs: vs, fs: fs }
-      .subscribe ({program, vs, fs}) =>
+      , (program, vs, fs) =>
         @gl.attachShader(program, vs)
         @gl.attachShader(program, fs)
 
@@ -47,8 +44,10 @@ class SJ.WebGLController
         @cacheUniformLocation program, 'resolution'
         @cacheUniformLocation program, 'audioTexture'
         
-        @vertexPosition = @gl.getAttribLocation @program, "position"
+        @vertexPosition = @gl.getAttribLocation program, "position"
         @gl.enableVertexAttribArray @vertexPosition
+        return program
+      .subscribe (program) => @program = program
 
   update: (audioEvent) ->
     if !@program? then return

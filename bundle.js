@@ -458,10 +458,6 @@ SJ.WebGLController = (function() {
       return function() {
         return _this.gl.createProgram();
       };
-    })(this)).doOnNext((function(_this) {
-      return function(program) {
-        return _this.program = program;
-      };
     })(this)).zip(this.shaderLoader.getShader(name + ".vert").map((function(_this) {
       return function(data) {
         return _this.createShader(_this.gl.VERTEX_SHADER, data);
@@ -470,16 +466,8 @@ SJ.WebGLController = (function() {
       return function(data) {
         return _this.createShader(_this.gl.FRAGMENT_SHADER, data);
       };
-    })(this)), function(program, vs, fs) {
-      return {
-        program: program,
-        vs: vs,
-        fs: fs
-      };
-    }).subscribe((function(_this) {
-      return function(_arg) {
-        var fs, program, vs;
-        program = _arg.program, vs = _arg.vs, fs = _arg.fs;
+    })(this)), (function(_this) {
+      return function(program, vs, fs) {
         _this.gl.attachShader(program, vs);
         _this.gl.attachShader(program, fs);
         _this.gl.deleteShader(vs);
@@ -489,8 +477,13 @@ SJ.WebGLController = (function() {
         _this.cacheUniformLocation(program, 'time');
         _this.cacheUniformLocation(program, 'resolution');
         _this.cacheUniformLocation(program, 'audioTexture');
-        _this.vertexPosition = _this.gl.getAttribLocation(_this.program, "position");
-        return _this.gl.enableVertexAttribArray(_this.vertexPosition);
+        _this.vertexPosition = _this.gl.getAttribLocation(program, "position");
+        _this.gl.enableVertexAttribArray(_this.vertexPosition);
+        return program;
+      };
+    })(this)).subscribe((function(_this) {
+      return function(program) {
+        return _this.program = program;
       };
     })(this));
   };
