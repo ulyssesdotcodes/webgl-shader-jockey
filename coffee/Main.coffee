@@ -9,6 +9,7 @@ require './SoundCloudLoader.coffee'
 require './Player.coffee'
 require './interface/AudioView.coffee'
 require './interface/LibraryView.coffee'
+require './interface/QueueView.coffee'
 
 class SJ.Main
   constructor: (isVisualizer) ->
@@ -19,16 +20,20 @@ class SJ.Main
     $('body').append canvas
 
     @audioView = new SJ.AudioView($('body'), window.location.hash.substring(1))
+
+    @queueView = new SJ.QueueView $('body')
     
     @player = new SJ.Player()
     @player.setPlayer @audioView.audioPlayer
 
     @webGLController = new SJ.WebGLController(canvas[0], new SJ.ShaderLoader())
-    @webGLController.loadShader "simple"
 
     @libraryView = new SJ.LibraryView($('body'))
-    @libraryView.shaderSelectionSubject.subscribe (name) =>
-      @webGLController.loadShader name
+    @libraryView.shaderSelectionSubject.subscribe (shader) => 
+      @queueView.addShader(shader)
+
+    @queueView.mShaderNextSubject.subscribe (shader) => 
+      @webGLController.loadShader(shader)
 
     @audioProcessor = new SJ.AudioProcessor()
 

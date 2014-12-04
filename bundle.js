@@ -120,6 +120,8 @@ require('./interface/AudioView.coffee');
 
 require('./interface/LibraryView.coffee');
 
+require('./interface/QueueView.coffee');
+
 SJ.Main = (function() {
   function Main(isVisualizer) {
     var canvas;
@@ -128,14 +130,19 @@ SJ.Main = (function() {
     });
     $('body').append(canvas);
     this.audioView = new SJ.AudioView($('body'), window.location.hash.substring(1));
+    this.queueView = new SJ.QueueView($('body'));
     this.player = new SJ.Player();
     this.player.setPlayer(this.audioView.audioPlayer);
     this.webGLController = new SJ.WebGLController(canvas[0], new SJ.ShaderLoader());
-    this.webGLController.loadShader("simple");
     this.libraryView = new SJ.LibraryView($('body'));
     this.libraryView.shaderSelectionSubject.subscribe((function(_this) {
-      return function(name) {
-        return _this.webGLController.loadShader(name);
+      return function(shader) {
+        return _this.queueView.addShader(shader);
+      };
+    })(this));
+    this.queueView.mShaderNextSubject.subscribe((function(_this) {
+      return function(shader) {
+        return _this.webGLController.loadShader(shader);
       };
     })(this));
     this.audioProcessor = new SJ.AudioProcessor();
@@ -176,7 +183,7 @@ SJ.Main = (function() {
 
 
 
-},{"./AudioProcessor.coffee":1,"./Player.coffee":3,"./ShaderLoader.coffee":4,"./SoundCloudLoader.coffee":5,"./WebGLManager.coffee":6,"./interface/AudioView.coffee":7,"./interface/LibraryView.coffee":8,"underscore":9}],3:[function(require,module,exports){
+},{"./AudioProcessor.coffee":1,"./Player.coffee":3,"./ShaderLoader.coffee":4,"./SoundCloudLoader.coffee":5,"./WebGLManager.coffee":6,"./interface/AudioView.coffee":7,"./interface/LibraryView.coffee":8,"./interface/QueueView.coffee":9,"underscore":10}],3:[function(require,module,exports){
 SJ.Player = (function() {
   function Player() {
     this.loadedAudio = new Array();
@@ -665,6 +672,58 @@ SJ.LibraryView = (function() {
 
 
 },{}],9:[function(require,module,exports){
+SJ.QueueView = (function() {
+  function QueueView(target) {
+    this.queue = [];
+    this.queueList = $("<div>", {
+      "class": "queue-list"
+    });
+    target.append(this.queueList);
+    this.nextButton = $("<a />", {
+      href: '#',
+      "class": "next-button",
+      text: ">>>>>>"
+    });
+    this.nextButton.click((function(_this) {
+      return function() {
+        return _this.next();
+      };
+    })(this));
+    target.append(this.nextButton);
+    this.mShaderNextSubject = new Rx.BehaviorSubject("simple");
+  }
+
+  QueueView.prototype.addShader = function(shader) {
+    if (!shader) {
+      return;
+    }
+    this.queue.push(shader);
+    return this.updateList();
+  };
+
+  QueueView.prototype.updateList = function() {
+    var newList, shader, _i, _len, _ref;
+    newList = $("<div>");
+    _ref = this.queue;
+    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+      shader = _ref[_i];
+      newList.append($("<div>" + shader + "</div>"));
+    }
+    return this.queueList.html(newList);
+  };
+
+  QueueView.prototype.next = function() {
+    this.mShaderNextSubject.onNext(this.queue.shift());
+    return this.updateList();
+  };
+
+  return QueueView;
+
+})();
+
+
+
+},{}],10:[function(require,module,exports){
 //     Underscore.js 1.7.0
 //     http://underscorejs.org
 //     (c) 2009-2014 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
