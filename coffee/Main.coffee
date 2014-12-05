@@ -1,6 +1,6 @@
 window.SJ = {}
 
-_ = require 'underscore'
+window.Effing = require '../node_modules/effing/src/index.coffee'
 
 require './WebGLManager.coffee'
 require './ShaderLoader.coffee'
@@ -29,8 +29,7 @@ class SJ.Main
     @webGLController = new SJ.WebGLController(canvas[0], new SJ.ShaderLoader())
 
     @libraryView = new SJ.LibraryView($('body'))
-    @libraryView.shaderSelectionSubject.subscribe (shader) => 
-      @queueView.addShader(shader)
+    @libraryView.shaderSelectionSubject.subscribe Effing(@queueView, "addShader")
 
     @queueView.mShaderNextSubject.subscribe (shader) => 
       @webGLController.loadShader(shader)
