@@ -851,26 +851,27 @@ module.exports = {
 
 
 },{"./prime":18,"./to-function":20}],13:[function(require,module,exports){
-var aliases, f, newName, oldName,
+var aliases, f, key, newName, obj, objRequires, oldName, value, _i, _len,
   __hasProp = {}.hasOwnProperty;
 
 f = require('./to-function');
 
-f['math'] = require('./math');
-
-f['logic'] = require('./logic');
-
-f['objects'] = require('./objects');
-
-f['relations'] = require('./relations');
-
-f['functions'] = require('./functions');
+objRequires = [require('./math'), require('./logic'), require('./objects'), require('./relations'), require('./functions')];
 
 f['overloaded'] = require('./overloaded');
 
 f['curried'] = require('./curried');
 
 f['prime'] = require('./prime');
+
+for (_i = 0, _len = objRequires.length; _i < _len; _i++) {
+  obj = objRequires[_i];
+  for (key in obj) {
+    if (!__hasProp.call(obj, key)) continue;
+    value = obj[key];
+    f[key] = value;
+  }
+}
 
 aliases = {
   sub: 'subtract',
