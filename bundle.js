@@ -121,11 +121,29 @@ require('./interface/LibraryView.coffee');
 require('./interface/QueueView.coffee');
 
 SJ.Main = (function() {
+  Main.prototype.shortcuts = {
+    32: "playPause",
+    78: "nextShader"
+  };
+
   function Main(isVisualizer) {
     var canvas;
     canvas = $("<canvas>", {
       "class": 'fullscreen'
     });
+    Rx.DOM.keyup(($('body')[0])).map(function(e) {
+      return e.keyCode;
+    }).map((function(_this) {
+      return function(keyCode) {
+        return _this.shortcuts[keyCode];
+      };
+    })(this)).filter(function(shortcut) {
+      return shortcut != null;
+    }).subscribe((function(_this) {
+      return function(shortcut) {
+        return Effing(_this, shortcut)();
+      };
+    })(this));
     $('body').append(canvas);
     this.audioView = new SJ.AudioView($('body'), window.location.hash.substring(1));
     this.queueView = new SJ.QueueView($('body'));
@@ -169,6 +187,14 @@ SJ.Main = (function() {
 
   Main.prototype.render = function() {
     return this.audioProcessor.update(this.player.analyser, this.player.audioContext.currentTime);
+  };
+
+  Main.prototype.playPause = function() {
+    return this.player.playPause();
+  };
+
+  Main.prototype.nextShader = function() {
+    return this.queueView.next();
   };
 
   return Main;
@@ -308,6 +334,20 @@ SJ.Player = (function() {
     return this.pauseMic();
   };
 
+  Player.prototype.playPause = function() {
+    if (this.miked) {
+      return;
+    }
+    if ((this.player == null) || !this.playing) {
+      return;
+    }
+    if (this.player[0].paused) {
+      return this.player[0].play();
+    } else {
+      return this.player[0].pause();
+    }
+  };
+
   return Player;
 
 })();
@@ -324,7 +364,7 @@ SJ.ShaderLoader = (function() {
     if (this.shaders[name]) {
       return Rx.Observable.just(this.shaders[name]);
     }
-    return Rx.DOM.Request.get('./shaders/' + name).map(function(data) {
+    return Rx.DOM.get('./shaders/' + name).map(function(data) {
       return data.responseText;
     }).doOnNext((function(_this) {
       return function(response) {

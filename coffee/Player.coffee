@@ -103,3 +103,9 @@ class SJ.Player
     @playing = true
     @pauseMic()
 
+  playPause: () ->
+    if @miked then return
+    if !@player? || !@playing then return
+
+    if @player[0].paused then @player[0].play()
+    else @player[0].pause()

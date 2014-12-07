@@ -6,6 +6,6 @@ class SJ.ShaderLoader
     if @shaders[name]
       return Rx.Observable.just @shaders[name]
 
-    return Rx.DOM.Request.get('./shaders/' + name)
+    return Rx.DOM.get('./shaders/' + name)
       .map((data) -> data.responseText)
       .doOnNext((response) => @shaders[name] = response);

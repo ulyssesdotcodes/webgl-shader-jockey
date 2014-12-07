@@ -12,10 +12,21 @@ require './interface/LibraryView.coffee'
 require './interface/QueueView.coffee'
 
 class SJ.Main
+  shortcuts:
+    32: "playPause" # spacebar
+    78: "nextShader" # n
+
   constructor: (isVisualizer) ->
 
     canvas = $ "<canvas>",
       class: 'fullscreen'
+
+    Rx.DOM.keyup ($('body')[0])
+      .map (e) -> e.keyCode
+      .map (keyCode) => @shortcuts[keyCode]
+      .filter (shortcut) -> shortcut?
+      .subscribe (shortcut) => 
+        Effing(@, shortcut)()
 
     $('body').append canvas
 
@@ -56,3 +67,10 @@ class SJ.Main
 
   render: () ->
     @audioProcessor.update @player.analyser, @player.audioContext.currentTime
+
+
+  playPause: () ->
+    @player.playPause()
+
+  nextShader: () ->
+    @queueView.next()

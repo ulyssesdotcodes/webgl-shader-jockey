@@ -1,0 +1,83 @@
+0 info it worked if it ends with ok
+1 verbose cli [ 'node',
+1 verbose cli   'C:\\ProgramData\\chocolatey\\lib\\npm.1.4.9\\tools\\node_modules\\npm\\bin\\npm-cli.js',
+1 verbose cli   'install',
+1 verbose cli   'rx-js-dom' ]
+2 info using npm@1.4.9
+3 info using node@v0.10.33
+4 verbose readDependencies using package.json deps
+5 verbose cache add [ 'rx-js-dom', null ]
+6 verbose cache add name=undefined spec="rx-js-dom" args=["rx-js-dom",null]
+7 verbose parsed url { protocol: null,
+7 verbose parsed url   slashes: null,
+7 verbose parsed url   auth: null,
+7 verbose parsed url   host: null,
+7 verbose parsed url   port: null,
+7 verbose parsed url   hostname: null,
+7 verbose parsed url   hash: null,
+7 verbose parsed url   search: null,
+7 verbose parsed url   query: null,
+7 verbose parsed url   pathname: 'rx-js-dom',
+7 verbose parsed url   path: 'rx-js-dom',
+7 verbose parsed url   href: 'rx-js-dom' }
+8 silly lockFile 824a1a4f-rx-js-dom rx-js-dom
+9 verbose lock rx-js-dom C:\Users\Ulysses\AppData\Roaming\npm-cache\824a1a4f-rx-js-dom.lock
+10 silly lockFile 824a1a4f-rx-js-dom rx-js-dom
+11 silly lockFile 824a1a4f-rx-js-dom rx-js-dom
+12 verbose addNamed [ 'rx-js-dom', '' ]
+13 verbose addNamed [ null, '*' ]
+14 silly lockFile 601614b7-rx-js-dom rx-js-dom@
+15 verbose lock rx-js-dom@ C:\Users\Ulysses\AppData\Roaming\npm-cache\601614b7-rx-js-dom.lock
+16 silly addNameRange { name: 'rx-js-dom', range: '*', hasData: false }
+17 verbose url raw rx-js-dom
+18 verbose url resolving [ 'https://registry.npmjs.org/', './rx-js-dom' ]
+19 verbose url resolved https://registry.npmjs.org/rx-js-dom
+20 info trying registry request attempt 1 at 00:22:01
+21 http GET https://registry.npmjs.org/rx-js-dom
+22 http 404 https://registry.npmjs.org/rx-js-dom
+23 verbose headers { date: 'Sun, 07 Dec 2014 05:22:10 GMT',
+23 verbose headers   server: 'CouchDB/1.5.0 (Erlang OTP/R14B04)',
+23 verbose headers   'content-type': 'application/json',
+23 verbose headers   'cache-control': 'max-age=0',
+23 verbose headers   'content-length': '52',
+23 verbose headers   'accept-ranges': 'bytes',
+23 verbose headers   via: '1.1 varnish',
+23 verbose headers   age: '0',
+23 verbose headers   'x-served-by': 'cache-iad2138-IAD',
+23 verbose headers   'x-cache': 'MISS',
+23 verbose headers   'x-cache-hits': '0',
+23 verbose headers   'x-timer': 'S1417929730.968416,VS0,VE27',
+23 verbose headers   'keep-alive': 'timeout=10, max=50',
+23 verbose headers   connection: 'Keep-Alive' }
+24 silly registry.get cb [ 404,
+24 silly registry.get   { date: 'Sun, 07 Dec 2014 05:22:10 GMT',
+24 silly registry.get     server: 'CouchDB/1.5.0 (Erlang OTP/R14B04)',
+24 silly registry.get     'content-type': 'application/json',
+24 silly registry.get     'cache-control': 'max-age=0',
+24 silly registry.get     'content-length': '52',
+24 silly registry.get     'accept-ranges': 'bytes',
+24 silly registry.get     via: '1.1 varnish',
+24 silly registry.get     age: '0',
+24 silly registry.get     'x-served-by': 'cache-iad2138-IAD',
+24 silly registry.get     'x-cache': 'MISS',
+24 silly registry.get     'x-cache-hits': '0',
+24 silly registry.get     'x-timer': 'S1417929730.968416,VS0,VE27',
+24 silly registry.get     'keep-alive': 'timeout=10, max=50',
+24 silly registry.get     connection: 'Keep-Alive' } ]
+25 silly lockFile 601614b7-rx-js-dom rx-js-dom@
+26 silly lockFile 601614b7-rx-js-dom rx-js-dom@
+27 error 404 404 Not Found: rx-js-dom
+27 error 404
+27 error 404 'rx-js-dom' is not in the npm registry.
+27 error 404 You should bug the author to publish it
+27 error 404 It was specified as a dependency of 'webgl-shader-jockey'
+27 error 404
+27 error 404 Note that you can also install from a
+27 error 404 tarball, folder, or http url, or git url.
+28 error System Windows_NT 6.2.9200
+29 error command "node" "C:\\ProgramData\\chocolatey\\lib\\npm.1.4.9\\tools\\node_modules\\npm\\bin\\npm-cli.js" "install" "rx-js-dom"
+30 error cwd C:\Users\Ulysses\Development\webgl-shader-jockey
+31 error node -v v0.10.33
+32 error npm -v 1.4.9
+33 error code E404
+34 verbose exit [ 1, true ]
