@@ -11,7 +11,9 @@ class SJ.QueueView
       href: '#'
       class: "next-button"
       text: ">>>>>>"
-    @nextButton.click () => @next()
+    @nextButton.click (e) =>
+      e.preventDefault()
+      @next()
 
     target.append @nextButton
 

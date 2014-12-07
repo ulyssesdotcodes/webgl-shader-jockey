@@ -679,7 +679,8 @@ SJ.QueueView = (function() {
       text: ">>>>>>"
     });
     this.nextButton.click((function(_this) {
-      return function() {
+      return function(e) {
+        e.preventDefault();
         return _this.next();
       };
     })(this));
