@@ -26,8 +26,7 @@ class SJ.AudioProcessor
     @timeSubject = new Rx.BehaviorSubject(@time)
     @deltaTime = 0
 
-  audioEventObservable: () ->
-    Rx.Observable.zip @timeSubject, @frequencyBufferSubject, @dbBufferSubject, @smoothFrequencyBufferSubject, @smoothDbBufferSubject, @averageDbSubject
+    @mAudioEventObservable = Rx.Observable.zip @timeSubject, @frequencyBufferSubject, @dbBufferSubject, @smoothFrequencyBufferSubject, @smoothDbBufferSubject, @averageDbSubject
       , (time, frequency, db, smoothFrequency, smoothDb, averageDb) ->
         { time: time, frequencyBuffer: frequency, dbBuffer: db, smoothFrequencyBuffer: smoothFrequency, smoothDbBuffer: smoothDb, averageDb: averageDb }
 

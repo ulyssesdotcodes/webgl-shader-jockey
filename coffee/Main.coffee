@@ -1,7 +1,8 @@
 window.SJ = {}
 
-window.Effing = require '../node_modules/effing/src/index.coffee'
+window.f = require '../node_modules/effing/src/index.coffee'
 
+require './Viewer.coffee'
 require './WebGLController.coffee'
 require './ShaderLoader.coffee'
 require './AudioProcessor.coffee'
@@ -16,17 +17,16 @@ class SJ.Main
     32: "playPause" # spacebar
     78: "nextShader" # n
 
-  constructor: (isVisualizer) ->
-
+  constructor: () ->
     canvas = $ "<canvas>",
       class: 'fullscreen'
 
     Rx.DOM.keyup ($('body')[0])
-      .map (e) -> e.keyCode
-      .map (keyCode) => @shortcuts[keyCode]
+      .map f.get('keyCode')
+      .map f.curried(f.swap(f.get))(@shortcuts)
       .filter (shortcut) -> shortcut?
       .subscribe (shortcut) => 
-        Effing(@, shortcut)()
+        f(@, shortcut)()
 
     $('body').append canvas
 
@@ -40,16 +40,21 @@ class SJ.Main
     @webGLController = new SJ.WebGLController(canvas[0], new SJ.ShaderLoader())
 
     @libraryView = new SJ.LibraryView($('body'))
-    @libraryView.shaderSelectionSubject.subscribe Effing(@queueView, "addShader")
+    @libraryView.shaderSelectionSubject.subscribe f(@queueView, "addShader")
+
+    @popupMessageSubject = new Rx.BehaviorSubject({type: 'shader', data: "simple"})
 
     @queueView.mShaderNextSubject.subscribe (shader) => 
       @webGLController.loadShader(shader)
+      @popupMessageSubject.onNext({type: 'shader', data: shader})
 
     @audioProcessor = new SJ.AudioProcessor()
 
-    @audioProcessor.audioEventObservable()
-      .subscribe (audioEvent) =>
-        @webGLController.update audioEvent
+    @audioProcessor.mAudioEventObservable
+      .subscribe f(@webGLController, "update")
+
+    @audioProcessor.mAudioEventObservable.subscribe (ae) => 
+      @popupMessageSubject.onNext({type: 'audioEvent', data: ae})
 
     @soundCloudLoader = new SJ.SoundCloudLoader(@audioView)
 
@@ -61,13 +66,30 @@ class SJ.Main
       
     @animate()
 
+    @viewerButton = $ "<a></a>",
+      class: 'viewer-button'
+      href: '#'
+      text: 'viewer'
+
+    Rx.DOM.click @viewerButton[0]
+      .subscribe (e) =>
+        e.preventDefault()
+        @domain = window.location.protocol + '//' + window.location.host
+        popupUrl = location.pathname + 'viewer.html'
+        @popup = window.open(popupUrl, 'viewerWindow')
+        @popupMessageSubject.subscribe (e) =>
+          @popup.postMessage e, @domain
+          #TODO: Figure out why not f.curried(f.swap(@popup.postMessage))(domain)
+        return
+
+    $('body').append @viewerButton
+
   animate: () ->
     requestAnimationFrame(() => @animate())
     @render()
 
   render: () ->
     @audioProcessor.update @player.analyser, @player.audioContext.currentTime
-
 
   playPause: () ->
     @player.playPause()

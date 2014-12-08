@@ -20,10 +20,7 @@ SJ.AudioProcessor = (function() {
     this.time = 0;
     this.timeSubject = new Rx.BehaviorSubject(this.time);
     this.deltaTime = 0;
-  }
-
-  AudioProcessor.prototype.audioEventObservable = function() {
-    return Rx.Observable.zip(this.timeSubject, this.frequencyBufferSubject, this.dbBufferSubject, this.smoothFrequencyBufferSubject, this.smoothDbBufferSubject, this.averageDbSubject, function(time, frequency, db, smoothFrequency, smoothDb, averageDb) {
+    this.mAudioEventObservable = Rx.Observable.zip(this.timeSubject, this.frequencyBufferSubject, this.dbBufferSubject, this.smoothFrequencyBufferSubject, this.smoothDbBufferSubject, this.averageDbSubject, function(time, frequency, db, smoothFrequency, smoothDb, averageDb) {
       return {
         time: time,
         frequencyBuffer: frequency,
@@ -33,7 +30,7 @@ SJ.AudioProcessor = (function() {
         averageDb: averageDb
       };
     });
-  };
+  }
 
   AudioProcessor.prototype.update = function(analyser, time) {
     var buf, deltaTimeS, diff, key, maxDiff, newTime, rms, sign, val, value, _i, _len, _ref, _ref1, _ref2;
@@ -102,9 +99,11 @@ SJ.AudioProcessor = (function() {
 },{}],2:[function(require,module,exports){
 window.SJ = {};
 
-window.Effing = require('../node_modules/effing/src/index.coffee');
+window.f = require('../node_modules/effing/src/index.coffee');
 
-require('./WebGLManager.coffee');
+require('./Viewer.coffee');
+
+require('./WebGLController.coffee');
 
 require('./ShaderLoader.coffee');
 
@@ -126,22 +125,16 @@ SJ.Main = (function() {
     78: "nextShader"
   };
 
-  function Main(isVisualizer) {
+  function Main() {
     var canvas;
     canvas = $("<canvas>", {
       "class": 'fullscreen'
     });
-    Rx.DOM.keyup(($('body')[0])).map(function(e) {
-      return e.keyCode;
-    }).map((function(_this) {
-      return function(keyCode) {
-        return _this.shortcuts[keyCode];
-      };
-    })(this)).filter(function(shortcut) {
+    Rx.DOM.keyup(($('body')[0])).map(f.get('keyCode')).map(f.curried(f.swap(f.get))(this.shortcuts)).filter(function(shortcut) {
       return shortcut != null;
     }).subscribe((function(_this) {
       return function(shortcut) {
-        return Effing(_this, shortcut)();
+        return f(_this, shortcut)();
       };
     })(this));
     $('body').append(canvas);
@@ -151,16 +144,28 @@ SJ.Main = (function() {
     this.player.setPlayer(this.audioView.audioPlayer);
     this.webGLController = new SJ.WebGLController(canvas[0], new SJ.ShaderLoader());
     this.libraryView = new SJ.LibraryView($('body'));
-    this.libraryView.shaderSelectionSubject.subscribe(Effing(this.queueView, "addShader"));
+    this.libraryView.shaderSelectionSubject.subscribe(f(this.queueView, "addShader"));
+    this.popupMessageSubject = new Rx.BehaviorSubject({
+      type: 'shader',
+      data: "simple"
+    });
     this.queueView.mShaderNextSubject.subscribe((function(_this) {
       return function(shader) {
-        return _this.webGLController.loadShader(shader);
+        _this.webGLController.loadShader(shader);
+        return _this.popupMessageSubject.onNext({
+          type: 'shader',
+          data: shader
+        });
       };
     })(this));
     this.audioProcessor = new SJ.AudioProcessor();
-    this.audioProcessor.audioEventObservable().subscribe((function(_this) {
-      return function(audioEvent) {
-        return _this.webGLController.update(audioEvent);
+    this.audioProcessor.mAudioEventObservable.subscribe(f(this.webGLController, "update"));
+    this.audioProcessor.mAudioEventObservable.subscribe((function(_this) {
+      return function(ae) {
+        return _this.popupMessageSubject.onNext({
+          type: 'audioEvent',
+          data: ae
+        });
       };
     })(this));
     this.soundCloudLoader = new SJ.SoundCloudLoader(this.audioView);
@@ -174,6 +179,24 @@ SJ.Main = (function() {
       };
     })(this));
     this.animate();
+    this.viewerButton = $("<a></a>", {
+      "class": 'viewer-button',
+      href: '#',
+      text: 'viewer'
+    });
+    Rx.DOM.click(this.viewerButton[0]).subscribe((function(_this) {
+      return function(e) {
+        var popupUrl;
+        e.preventDefault();
+        _this.domain = window.location.protocol + '//' + window.location.host;
+        popupUrl = location.pathname + 'viewer.html';
+        _this.popup = window.open(popupUrl, 'viewerWindow');
+        _this.popupMessageSubject.subscribe(function(e) {
+          return _this.popup.postMessage(e, _this.domain);
+        });
+      };
+    })(this));
+    $('body').append(this.viewerButton);
   }
 
   Main.prototype.animate = function() {
@@ -203,7 +226,7 @@ SJ.Main = (function() {
 
 
 
-},{"../node_modules/effing/src/index.coffee":13,"./AudioProcessor.coffee":1,"./Player.coffee":3,"./ShaderLoader.coffee":4,"./SoundCloudLoader.coffee":5,"./WebGLManager.coffee":6,"./interface/AudioView.coffee":7,"./interface/LibraryView.coffee":8,"./interface/QueueView.coffee":9}],3:[function(require,module,exports){
+},{"../node_modules/effing/src/index.coffee":14,"./AudioProcessor.coffee":1,"./Player.coffee":3,"./ShaderLoader.coffee":4,"./SoundCloudLoader.coffee":5,"./Viewer.coffee":6,"./WebGLController.coffee":7,"./interface/AudioView.coffee":8,"./interface/LibraryView.coffee":9,"./interface/QueueView.coffee":10}],3:[function(require,module,exports){
 SJ.Player = (function() {
   function Player() {
     this.loadedAudio = new Array();
@@ -470,6 +493,46 @@ SJ.SoundCloudLoader = (function() {
 
 
 },{}],6:[function(require,module,exports){
+require('./ShaderLoader.coffee');
+
+SJ.Viewer = (function() {
+  function Viewer() {
+    var canvas, messageObservable;
+    canvas = $("<canvas>", {
+      "class": 'fullscreen'
+    });
+    $('body').append(canvas);
+    this.webGLController = new SJ.WebGLController(canvas[0], new SJ.ShaderLoader());
+    this.domain = window.location.protocol + '//' + window.location.host;
+    messageObservable = Rx.DOM.fromEvent(window, 'message').filter((function(_this) {
+      return function(e) {
+        return e.origin === _this.domain;
+      };
+    })(this)).map(f.get('data'));
+    messageObservable.filter(function(m) {
+      return m.type === "shader";
+    }).map(f.get('data')).subscribe(f(this, 'updateShader'));
+    messageObservable.filter(function(m) {
+      return m.type === "audioEvent";
+    }).map(f.get('data')).subscribe(f(this, 'update'));
+    return;
+  }
+
+  Viewer.prototype.update = function(audioEvent) {
+    return this.webGLController.update(audioEvent);
+  };
+
+  Viewer.prototype.updateShader = function(shader) {
+    return this.webGLController.loadShader(shader);
+  };
+
+  return Viewer;
+
+})();
+
+
+
+},{"./ShaderLoader.coffee":4}],7:[function(require,module,exports){
 SJ.WebGLController = (function() {
   function WebGLController(canvas, shaderLoader) {
     this.canvas = canvas;
@@ -615,7 +678,7 @@ SJ.WebGLController = (function() {
 
 
 
-},{}],7:[function(require,module,exports){
+},{}],8:[function(require,module,exports){
 SJ.AudioView = (function() {
   AudioView.micUrl = "mic";
 
@@ -670,7 +733,7 @@ SJ.AudioView = (function() {
 
 
 
-},{}],8:[function(require,module,exports){
+},{}],9:[function(require,module,exports){
 SJ.LibraryView = (function() {
   LibraryView.shaders = ["simple", "fft_matrix_product"];
 
@@ -705,7 +768,7 @@ SJ.LibraryView = (function() {
 
 
 
-},{}],9:[function(require,module,exports){
+},{}],10:[function(require,module,exports){
 SJ.QueueView = (function() {
   function QueueView(target) {
     this.queue = [];
@@ -758,7 +821,7 @@ SJ.QueueView = (function() {
 
 
 
-},{}],10:[function(require,module,exports){
+},{}],11:[function(require,module,exports){
 var curry, overloaded,
   __hasProp = {}.hasOwnProperty;
 
@@ -790,7 +853,7 @@ module.exports = function(ops) {
 
 
 
-},{"./overloaded":17}],11:[function(require,module,exports){
+},{"./overloaded":18}],12:[function(require,module,exports){
 var curried, f,
   __slice = [].slice;
 
@@ -818,7 +881,7 @@ module.exports = curried;
 
 
 
-},{"./to-function":20}],12:[function(require,module,exports){
+},{"./to-function":21}],13:[function(require,module,exports){
 var f, prime,
   __slice = [].slice;
 
@@ -891,7 +954,7 @@ module.exports = {
 
 
 
-},{"./prime":18,"./to-function":20}],13:[function(require,module,exports){
+},{"./prime":19,"./to-function":21}],14:[function(require,module,exports){
 var aliases, f, key, newName, obj, objRequires, oldName, value, _i, _len,
   __hasProp = {}.hasOwnProperty;
 
@@ -936,7 +999,7 @@ module.exports = f;
 
 
 
-},{"./curried":11,"./functions":12,"./logic":14,"./math":15,"./objects":16,"./overloaded":17,"./prime":18,"./relations":19,"./to-function":20}],14:[function(require,module,exports){
+},{"./curried":12,"./functions":13,"./logic":15,"./math":16,"./objects":17,"./overloaded":18,"./prime":19,"./relations":20,"./to-function":21}],15:[function(require,module,exports){
 var operators;
 
 operators = require('./binary-operators');
@@ -956,7 +1019,7 @@ module.exports.not = function(a) {
 
 
 
-},{"./binary-operators":10}],15:[function(require,module,exports){
+},{"./binary-operators":11}],16:[function(require,module,exports){
 var operators;
 
 operators = require('./binary-operators');
@@ -991,7 +1054,7 @@ module.exports.negate = function(a) {
 
 
 
-},{"./binary-operators":10}],16:[function(require,module,exports){
+},{"./binary-operators":11}],17:[function(require,module,exports){
 var curried,
   __slice = [].slice;
 
@@ -1013,7 +1076,7 @@ module.exports = {
 
 
 
-},{"./curried":11}],17:[function(require,module,exports){
+},{"./curried":12}],18:[function(require,module,exports){
 var biggestSmallerThanOrEqualTo, f,
   __hasProp = {}.hasOwnProperty;
 
@@ -1070,7 +1133,7 @@ module.exports = function(originalMap) {
 
 
 
-},{"./to-function":20}],18:[function(require,module,exports){
+},{"./to-function":21}],19:[function(require,module,exports){
 var f, seq,
   __slice = [].slice;
 
@@ -1113,7 +1176,7 @@ module.exports = function(_arg) {
 
 
 
-},{"./to-function":20}],19:[function(require,module,exports){
+},{"./to-function":21}],20:[function(require,module,exports){
 var operators;
 
 operators = require('./binary-operators');
@@ -1141,7 +1204,7 @@ module.exports = operators({
 
 
 
-},{"./binary-operators":10}],20:[function(require,module,exports){
+},{"./binary-operators":11}],21:[function(require,module,exports){
 var isArray, isFunction, isString, noop, toFunction, _ref,
   __slice = [].slice;
 
