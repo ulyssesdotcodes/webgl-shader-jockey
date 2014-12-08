@@ -2,7 +2,7 @@ window.SJ = {}
 
 window.Effing = require '../node_modules/effing/src/index.coffee'
 
-require './WebGLManager.coffee'
+require './WebGLController.coffee'
 require './ShaderLoader.coffee'
 require './AudioProcessor.coffee'
 require './SoundCloudLoader.coffee'
