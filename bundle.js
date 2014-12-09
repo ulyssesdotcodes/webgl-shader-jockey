@@ -130,9 +130,7 @@ SJ.Main = (function() {
     canvas = $("<canvas>", {
       "class": 'fullscreen'
     });
-    Rx.DOM.keyup(($('body')[0])).map(f.get('keyCode')).map(f.curried(f.swap(f.get))(this.shortcuts)).filter(function(shortcut) {
-      return shortcut != null;
-    }).subscribe((function(_this) {
+    Rx.DOM.keyup(($('body')[0])).map(f.get('keyCode')).map(f.curried(f.swap(f.get))(this.shortcuts)).filter(f.neq(void 0)).subscribe((function(_this) {
       return function(shortcut) {
         return f(_this, shortcut)();
       };
@@ -149,36 +147,24 @@ SJ.Main = (function() {
       type: 'shader',
       data: "simple"
     });
-    this.queueView.mShaderNextSubject.subscribe((function(_this) {
-      return function(shader) {
-        _this.webGLController.loadShader(shader);
-        return _this.popupMessageSubject.onNext({
-          type: 'shader',
-          data: shader
-        });
+    this.queueView.mShaderNextSubject.subscribe(f(this.webGLController, 'loadShader'));
+    this.queueView.mShaderNextSubject.map(function(shader) {
+      return {
+        type: 'shader',
+        data: shader
       };
-    })(this));
+    }).subscribe(f(this.popupMessageSubject, 'onNext'));
     this.audioProcessor = new SJ.AudioProcessor();
     this.audioProcessor.mAudioEventObservable.subscribe(f(this.webGLController, "update"));
-    this.audioProcessor.mAudioEventObservable.subscribe((function(_this) {
-      return function(ae) {
-        return _this.popupMessageSubject.onNext({
-          type: 'audioEvent',
-          data: ae
-        });
+    this.audioProcessor.mAudioEventObservable.map(function(ae) {
+      return {
+        type: 'audioEvent',
+        data: ae
       };
-    })(this));
+    }).subscribe(f(this.popupMessageSubject, "onNext"));
     this.soundCloudLoader = new SJ.SoundCloudLoader(this.audioView);
-    this.audioView.mURLObservable.subscribe((function(_this) {
-      return function(url) {
-        if (url === SJ.AudioView.micUrl) {
-          _this.player.createLiveInput();
-          return;
-        }
-        return _this.soundCloudLoader.loadStream(url);
-      };
-    })(this));
-    this.animate();
+    this.audioView.mURLObservable.filter(f.eq(SJ.AudioView.micUrl)).subscribe(f(this.player, 'createLiveInput'));
+    this.audioView.mURLObservable.filter(f.neq(SJ.AudioView.micUrl)).subscribe(f(this.soundCloudLoader, 'loadStream'));
     this.viewerButton = $("<a></a>", {
       "class": 'viewer-button',
       href: '#',
@@ -197,14 +183,11 @@ SJ.Main = (function() {
       };
     })(this));
     $('body').append(this.viewerButton);
+    this.animate();
   }
 
   Main.prototype.animate = function() {
-    requestAnimationFrame((function(_this) {
-      return function() {
-        return _this.animate();
-      };
-    })(this));
+    requestAnimationFrame(f(this, 'animate'));
     return this.render();
   };
 
@@ -387,9 +370,7 @@ SJ.ShaderLoader = (function() {
     if (this.shaders[name]) {
       return Rx.Observable.just(this.shaders[name]);
     }
-    return Rx.DOM.get('./shaders/' + name).map(function(data) {
-      return data.responseText;
-    }).doOnNext((function(_this) {
+    return Rx.DOM.get('./shaders/' + name).map(f.get('responseText')).doOnNext((function(_this) {
       return function(response) {
         return _this.shaders[name] = response;
       };
@@ -415,6 +396,9 @@ SJ.SoundCloudLoader = (function() {
   }
 
   SoundCloudLoader.prototype.loadStream = function(url, successCallback, errorCallback) {
+    if (typeof SC === "undefined" || SC === null) {
+      return;
+    }
     SC.initialize({
       client_id: this.constructor.client_id
     });

@@ -6,6 +6,8 @@ class SJ.SoundCloudLoader
     return
 
   loadStream: (url, successCallback, errorCallback) ->
+    if !SC? then return # No internet
+
     SC.initialize
       client_id: @constructor.client_id
     

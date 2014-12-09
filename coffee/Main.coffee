@@ -24,7 +24,7 @@ class SJ.Main
     Rx.DOM.keyup ($('body')[0])
       .map f.get('keyCode')
       .map f.curried(f.swap(f.get))(@shortcuts)
-      .filter (shortcut) -> shortcut?
+      .filter f.neq(undefined)
       .subscribe (shortcut) => 
         f(@, shortcut)()
 
@@ -44,27 +44,25 @@ class SJ.Main
 
     @popupMessageSubject = new Rx.BehaviorSubject({type: 'shader', data: "simple"})
 
-    @queueView.mShaderNextSubject.subscribe (shader) => 
-      @webGLController.loadShader(shader)
-      @popupMessageSubject.onNext({type: 'shader', data: shader})
+    @queueView.mShaderNextSubject.subscribe f(@webGLController, 'loadShader')
+    @queueView.mShaderNextSubject.map (shader) -> { type: 'shader', data: shader }
+      .subscribe f(@popupMessageSubject, 'onNext')
 
     @audioProcessor = new SJ.AudioProcessor()
-
     @audioProcessor.mAudioEventObservable
       .subscribe f(@webGLController, "update")
 
-    @audioProcessor.mAudioEventObservable.subscribe (ae) => 
-      @popupMessageSubject.onNext({type: 'audioEvent', data: ae})
+    @audioProcessor.mAudioEventObservable
+      .map (ae) -> { type: 'audioEvent', data: ae }
+      .subscribe f(@popupMessageSubject, "onNext")
 
     @soundCloudLoader = new SJ.SoundCloudLoader(@audioView)
 
-    @audioView.mURLObservable.subscribe (url) =>
-      if url == SJ.AudioView.micUrl
-        @player.createLiveInput()
-        return
-      @soundCloudLoader.loadStream url
-      
-    @animate()
+    @audioView.mURLObservable.filter f.eq(SJ.AudioView.micUrl)
+      .subscribe f(@player, 'createLiveInput')
+
+    @audioView.mURLObservable.filter f.neq(SJ.AudioView.micUrl)
+      .subscribe f(@soundCloudLoader, 'loadStream')
 
     @viewerButton = $ "<a></a>",
       class: 'viewer-button'
@@ -79,13 +77,14 @@ class SJ.Main
         @popup = window.open(popupUrl, 'viewerWindow')
         @popupMessageSubject.subscribe (e) =>
           @popup.postMessage e, @domain
-          #TODO: Figure out why not f.curried(f.swap(@popup.postMessage))(domain)
         return
 
     $('body').append @viewerButton
+    
+    @animate()
 
   animate: () ->
-    requestAnimationFrame(() => @animate())
+    requestAnimationFrame(f(@, 'animate'))
     @render()
 
   render: () ->

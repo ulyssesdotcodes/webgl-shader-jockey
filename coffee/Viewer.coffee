@@ -1,4 +1,5 @@
 require './ShaderLoader.coffee'
+
 class SJ.Viewer
   constructor: () ->
     canvas = $ "<canvas>",
