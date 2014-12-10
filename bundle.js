@@ -719,7 +719,7 @@ SJ.AudioView = (function() {
 
 },{}],9:[function(require,module,exports){
 SJ.LibraryView = (function() {
-  LibraryView.shaders = ["simple", "fft_matrix_product"];
+  LibraryView.shaders = ["simple", "fft_matrix_product", "circular_fft"];
 
   function LibraryView(target) {
     var shader, _i, _len, _ref;
@@ -946,12 +946,6 @@ f = require('./to-function');
 
 objRequires = [require('./math'), require('./logic'), require('./objects'), require('./relations'), require('./functions')];
 
-f['overloaded'] = require('./overloaded');
-
-f['curried'] = require('./curried');
-
-f['prime'] = require('./prime');
-
 for (_i = 0, _len = objRequires.length; _i < _len; _i++) {
   obj = objRequires[_i];
   for (key in obj) {
@@ -960,6 +954,12 @@ for (_i = 0, _len = objRequires.length; _i < _len; _i++) {
     f[key] = value;
   }
 }
+
+f['overloaded'] = require('./overloaded');
+
+f['curried'] = require('./curried');
+
+f['prime'] = require('./prime');
 
 aliases = {
   sub: 'subtract',
