@@ -1,5 +1,8 @@
 class SJ.WebGLController
-  constructor: (@canvas, @shaderLoader) ->
+  @touchEventCount: 10 # The number of touch events to remember. BE SURE TO SET THIS IN THE FRAGMENT SHADER
+
+  constructor: (@canvas, @shaderLoader, @audioEventObservable) ->
+    @touchEventIndex = 0;
     @startTime = Date.now()
     @texture = { arr: new Uint8Array(SJ.AudioProcessor.bufferSize * 4) }
     @gl = @canvas.getContext("experimental-webgl")
@@ -18,6 +21,10 @@ class SJ.WebGLController
     @gl.clearColor(0.0, 0.0, 0.0, 0.0)
     @gl.enable(@gl.DEPTH_TEST)
     @gl.clear(@gl.COLOR_BUFFER_BIT | @gl.DEPTH_BUFFER_BIT)
+
+    @audioEventObservable.subscribe f(@, 'update')
+    @touchEvents = new Array(SJ.WebGLController.touchEventCount * 3)
+    @resetTouchEvents()
 
   loadShader: (name) ->
     if !name? then return
@@ -43,6 +50,7 @@ class SJ.WebGLController
         @cacheUniformLocation program, 'time'
         @cacheUniformLocation program, 'resolution'
         @cacheUniformLocation program, 'audioTexture'
+        @cacheUniformLocation program, 'te'
         
         @vertexPosition = @gl.getAttribLocation program, "position"
         @gl.enableVertexAttribArray @vertexPosition
@@ -55,10 +63,11 @@ class SJ.WebGLController
     @gl.clear(@gl.COLOR_BUFFER_BIT | @gl.DEPTH_BUFFER_BIT)
     @gl.useProgram @program
     
-    @gl.uniform2f @program.uniformsCache['resolution'], @canvas.width, @canvas.height
+    @gl.uniform2f @program.uniformsCache['resolution'], @canvas.clientWidth, @canvas.clientHeight
     @gl.uniform1f @program.uniformsCache['audioResolution'], SJ.AudioProcessor.bufferSize
     @gl.uniform1f @program.uniformsCache['time'], (audioEvent.time) / 1000.0
     @gl.uniform1i @program.uniformsCache['audioTexture'], 0
+    @gl.uniform3fv @program.uniformsCache['te'], @touchEvents
 
     @mapAudioToArray audioEvent, @texture.arr
 
@@ -70,7 +79,6 @@ class SJ.WebGLController
     
     @gl.bindBuffer @gl.ARRAY_BUFFER, @buffer
     @gl.vertexAttribPointer( @vertexPosition, 2, @gl.FLOAT, false, 0, 0 );
-
 
     @gl.drawArrays(@gl.TRIANGLES, 0, 6)
   
@@ -116,3 +124,19 @@ class SJ.WebGLController
 
     for i in [1..buffer.length]
       out[i * channels + cIndex] = buffer[i]
+
+  resetTouchEvents: () =>
+    for i in [0...@touchEvents.length]
+      @touchEvents[i] = 0.0
+
+  addTouchEvent: (e) =>
+    
+    # Map the canvas mouse coordinates to the gl viewport
+    @audioEventObservable.take(1).zip \
+      Rx.Observable.just(e.clientX).map(f.div(@canvas.clientWidth)),
+      Rx.Observable.just(e.clientY).map(f.compose(((a) -> 1.0 - a), f.div(@canvas.clientHeight))),
+        (ae, ex, ey) -> [ex, ey, ae.time / 1000.0]
+      .subscribe (te) =>
+        @touchEvents.splice(@touchEventIndex * 3, 3, te[0], te[1], te[2])
+
+        @touchEventIndex = ++@touchEventIndex % SJ.WebGLController.touchEventCount

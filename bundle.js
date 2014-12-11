@@ -128,8 +128,12 @@ SJ.Main = (function() {
   function Main() {
     var canvas;
     canvas = $("<canvas>", {
-      "class": 'fullscreen'
+      "class": 'fullscreen',
+      width: window.innerWidth,
+      height: window.innerHeight
     });
+    canvas[0].width = window.innerWidth;
+    canvas[0].height = window.innerHeight;
     Rx.DOM.keyup(($('body')[0])).map(f.get('keyCode')).map(f.curried(f.swap(f.get))(this.shortcuts)).filter(f.neq(void 0)).subscribe((function(_this) {
       return function(shortcut) {
         return f(_this, shortcut)();
@@ -140,7 +144,9 @@ SJ.Main = (function() {
     this.queueView = new SJ.QueueView($('body'));
     this.player = new SJ.Player();
     this.player.setPlayer(this.audioView.audioPlayer);
-    this.webGLController = new SJ.WebGLController(canvas[0], new SJ.ShaderLoader());
+    this.audioProcessor = new SJ.AudioProcessor();
+    this.webGLController = new SJ.WebGLController(canvas[0], new SJ.ShaderLoader(), this.audioProcessor.mAudioEventObservable);
+    Rx.DOM.click(canvas[0]).subscribe(f(this.webGLController, 'addTouchEvent'));
     this.libraryView = new SJ.LibraryView($('body'));
     this.libraryView.shaderSelectionSubject.subscribe(f(this.queueView, "addShader"));
     this.popupMessageSubject = new Rx.BehaviorSubject({
@@ -154,8 +160,6 @@ SJ.Main = (function() {
         data: shader
       };
     }).subscribe(f(this.popupMessageSubject, 'onNext'));
-    this.audioProcessor = new SJ.AudioProcessor();
-    this.audioProcessor.mAudioEventObservable.subscribe(f(this.webGLController, "update"));
     this.audioProcessor.mAudioEventObservable.map(function(ae) {
       return {
         type: 'audioEvent',
@@ -517,10 +521,18 @@ SJ.Viewer = (function() {
 
 
 },{"./ShaderLoader.coffee":4}],7:[function(require,module,exports){
+var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
+
 SJ.WebGLController = (function() {
-  function WebGLController(canvas, shaderLoader) {
+  WebGLController.touchEventCount = 10;
+
+  function WebGLController(canvas, shaderLoader, audioEventObservable) {
     this.canvas = canvas;
     this.shaderLoader = shaderLoader;
+    this.audioEventObservable = audioEventObservable;
+    this.addTouchEvent = __bind(this.addTouchEvent, this);
+    this.resetTouchEvents = __bind(this.resetTouchEvents, this);
+    this.touchEventIndex = 0;
     this.startTime = Date.now();
     this.texture = {
       arr: new Uint8Array(SJ.AudioProcessor.bufferSize * 4)
@@ -535,6 +547,9 @@ SJ.WebGLController = (function() {
     this.gl.clearColor(0.0, 0.0, 0.0, 0.0);
     this.gl.enable(this.gl.DEPTH_TEST);
     this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
+    this.audioEventObservable.subscribe(f(this, 'update'));
+    this.touchEvents = new Array(SJ.WebGLController.touchEventCount * 3);
+    this.resetTouchEvents();
   }
 
   WebGLController.prototype.loadShader = function(name) {
@@ -565,6 +580,7 @@ SJ.WebGLController = (function() {
         _this.cacheUniformLocation(program, 'time');
         _this.cacheUniformLocation(program, 'resolution');
         _this.cacheUniformLocation(program, 'audioTexture');
+        _this.cacheUniformLocation(program, 'te');
         _this.vertexPosition = _this.gl.getAttribLocation(program, "position");
         _this.gl.enableVertexAttribArray(_this.vertexPosition);
         return program;
@@ -582,10 +598,11 @@ SJ.WebGLController = (function() {
     }
     this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
     this.gl.useProgram(this.program);
-    this.gl.uniform2f(this.program.uniformsCache['resolution'], this.canvas.width, this.canvas.height);
+    this.gl.uniform2f(this.program.uniformsCache['resolution'], this.canvas.clientWidth, this.canvas.clientHeight);
     this.gl.uniform1f(this.program.uniformsCache['audioResolution'], SJ.AudioProcessor.bufferSize);
     this.gl.uniform1f(this.program.uniformsCache['time'], audioEvent.time / 1000.0);
     this.gl.uniform1i(this.program.uniformsCache['audioTexture'], 0);
+    this.gl.uniform3fv(this.program.uniformsCache['te'], this.touchEvents);
     this.mapAudioToArray(audioEvent, this.texture.arr);
     this.gl.activeTexture(this.gl.TEXTURE0);
     this.gl.bindTexture(this.gl.TEXTURE_2D, this.texture.tex);
@@ -654,6 +671,28 @@ SJ.WebGLController = (function() {
       _results.push(out[i * channels + cIndex] = buffer[i]);
     }
     return _results;
+  };
+
+  WebGLController.prototype.resetTouchEvents = function() {
+    var i, _i, _ref, _results;
+    _results = [];
+    for (i = _i = 0, _ref = this.touchEvents.length; 0 <= _ref ? _i < _ref : _i > _ref; i = 0 <= _ref ? ++_i : --_i) {
+      _results.push(this.touchEvents[i] = 0.0);
+    }
+    return _results;
+  };
+
+  WebGLController.prototype.addTouchEvent = function(e) {
+    return this.audioEventObservable.take(1).zip(Rx.Observable.just(e.clientX).map(f.div(this.canvas.clientWidth)), Rx.Observable.just(e.clientY).map(f.compose((function(a) {
+      return 1.0 - a;
+    }), f.div(this.canvas.clientHeight))), function(ae, ex, ey) {
+      return [ex, ey, ae.time / 1000.0];
+    }).subscribe((function(_this) {
+      return function(te) {
+        _this.touchEvents.splice(_this.touchEventIndex * 3, 3, te[0], te[1], te[2]);
+        return _this.touchEventIndex = ++_this.touchEventIndex % SJ.WebGLController.touchEventCount;
+      };
+    })(this));
   };
 
   return WebGLController;
@@ -955,11 +994,11 @@ for (_i = 0, _len = objRequires.length; _i < _len; _i++) {
   }
 }
 
-f['overloaded'] = require('./overloaded');
+f.overloaded = require('./overloaded');
 
-f['curried'] = require('./curried');
+f.curried = require('./curried');
 
-f['prime'] = require('./prime');
+f.prime = require('./prime');
 
 aliases = {
   sub: 'subtract',

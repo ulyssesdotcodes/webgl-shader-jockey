@@ -20,6 +20,11 @@ class SJ.Main
   constructor: () ->
     canvas = $ "<canvas>",
       class: 'fullscreen'
+      width: window.innerWidth
+      height: window.innerHeight
+
+    canvas[0].width = window.innerWidth
+    canvas[0].height = window.innerHeight
 
     Rx.DOM.keyup ($('body')[0])
       .map f.get('keyCode')
@@ -37,7 +42,14 @@ class SJ.Main
     @player = new SJ.Player()
     @player.setPlayer @audioView.audioPlayer
 
-    @webGLController = new SJ.WebGLController(canvas[0], new SJ.ShaderLoader())
+    @audioProcessor = new SJ.AudioProcessor()
+
+    @webGLController = 
+      new SJ.WebGLController(canvas[0], new SJ.ShaderLoader(), 
+        @audioProcessor.mAudioEventObservable)
+
+    Rx.DOM.click canvas[0]
+      .subscribe f(@webGLController, 'addTouchEvent')
 
     @libraryView = new SJ.LibraryView($('body'))
     @libraryView.shaderSelectionSubject.subscribe f(@queueView, "addShader")
@@ -47,10 +59,6 @@ class SJ.Main
     @queueView.mShaderNextSubject.subscribe f(@webGLController, 'loadShader')
     @queueView.mShaderNextSubject.map (shader) -> { type: 'shader', data: shader }
       .subscribe f(@popupMessageSubject, 'onNext')
-
-    @audioProcessor = new SJ.AudioProcessor()
-    @audioProcessor.mAudioEventObservable
-      .subscribe f(@webGLController, "update")
 
     @audioProcessor.mAudioEventObservable
       .map (ae) -> { type: 'audioEvent', data: ae }
