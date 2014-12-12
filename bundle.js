@@ -126,27 +126,26 @@ SJ.Main = (function() {
   };
 
   function Main() {
-    var canvas;
-    canvas = $("<canvas>", {
+    this.canvas = $("<canvas>", {
       "class": 'fullscreen',
       width: window.innerWidth,
       height: window.innerHeight
     });
-    canvas[0].width = window.innerWidth;
-    canvas[0].height = window.innerHeight;
+    this.onResize();
+    Rx.DOM.resize(window).subscribe(f(this, 'onResize'));
     Rx.DOM.keyup(($('body')[0])).map(f.get('keyCode')).map(f.curried(f.swap(f.get))(this.shortcuts)).filter(f.neq(void 0)).subscribe((function(_this) {
       return function(shortcut) {
         return f(_this, shortcut)();
       };
     })(this));
-    $('body').append(canvas);
+    $('body').append(this.canvas);
     this.audioView = new SJ.AudioView($('body'), window.location.hash.substring(1));
     this.queueView = new SJ.QueueView($('body'));
     this.player = new SJ.Player();
     this.player.setPlayer(this.audioView.audioPlayer);
     this.audioProcessor = new SJ.AudioProcessor();
-    this.webGLController = new SJ.WebGLController(canvas[0], new SJ.ShaderLoader(), this.audioProcessor.mAudioEventObservable);
-    Rx.DOM.click(canvas[0]).subscribe(f(this.webGLController, 'addTouchEvent'));
+    this.webGLController = new SJ.WebGLController(this.canvas[0], new SJ.ShaderLoader(), this.audioProcessor.mAudioEventObservable);
+    Rx.DOM.click(this.canvas[0]).subscribe(f(this.webGLController, 'addTouchEvent'));
     this.libraryView = new SJ.LibraryView($('body'));
     this.libraryView.shaderSelectionSubject.subscribe(f(this.queueView, "addShader"));
     this.popupMessageSubject = new Rx.BehaviorSubject({
@@ -205,6 +204,13 @@ SJ.Main = (function() {
 
   Main.prototype.nextShader = function() {
     return this.queueView.next();
+  };
+
+  Main.prototype.onResize = function() {
+    this.canvas.width(window.innerWidth);
+    this.canvas.height(window.innerHeight);
+    this.canvas[0].width = window.innerWidth;
+    return this.canvas[0].height = window.innerHeight;
   };
 
   return Main;
@@ -485,12 +491,25 @@ require('./ShaderLoader.coffee');
 
 SJ.Viewer = (function() {
   function Viewer() {
-    var canvas, messageObservable;
-    canvas = $("<canvas>", {
-      "class": 'fullscreen'
+    var audioEventObeservable, messageObservable;
+    this.canvas = $("<canvas>", {
+      "class": 'fullscreen',
+      width: window.innerWidth,
+      height: window.innerHeight
     });
-    $('body').append(canvas);
-    this.webGLController = new SJ.WebGLController(canvas[0], new SJ.ShaderLoader());
+    this.canvas[0].width = window.innerWidth;
+    this.canvas[0].height = window.innerHeight;
+    Rx.DOM.resize(window).subscribe((function(_this) {
+      return function(e) {
+        _this.canvas.width(window.innerWidth);
+        _this.canvas.height(window.innerHeight);
+        _this.canvas[0].width = window.innerWidth;
+        return _this.canvas[0].height = window.innerHeight;
+      };
+    })(this));
+    $('body').append(this.canvas);
+    audioEventObeservable = new Rx.BehaviorSubject();
+    this.webGLController = new SJ.WebGLController(this.canvas[0], new SJ.ShaderLoader(), audioEventObeservable);
     this.domain = window.location.protocol + '//' + window.location.host;
     messageObservable = Rx.DOM.fromEvent(window, 'message').filter((function(_this) {
       return function(e) {
@@ -502,7 +521,7 @@ SJ.Viewer = (function() {
     }).map(f.get('data')).subscribe(f(this, 'updateShader'));
     messageObservable.filter(function(m) {
       return m.type === "audioEvent";
-    }).map(f.get('data')).subscribe(f(this, 'update'));
+    }).map(f.get('data')).subscribe(f(audioEventObeservable, 'onNext'));
     return;
   }
 

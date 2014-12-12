@@ -18,13 +18,15 @@ class SJ.Main
     78: "nextShader" # n
 
   constructor: () ->
-    canvas = $ "<canvas>",
+    @canvas = $ "<canvas>",
       class: 'fullscreen'
       width: window.innerWidth
       height: window.innerHeight
 
-    canvas[0].width = window.innerWidth
-    canvas[0].height = window.innerHeight
+    @onResize()
+    
+    Rx.DOM.resize window
+      .subscribe f(@, 'onResize')
 
     Rx.DOM.keyup ($('body')[0])
       .map f.get('keyCode')
@@ -33,7 +35,7 @@ class SJ.Main
       .subscribe (shortcut) => 
         f(@, shortcut)()
 
-    $('body').append canvas
+    $('body').append @canvas
 
     @audioView = new SJ.AudioView($('body'), window.location.hash.substring(1))
 
@@ -45,10 +47,10 @@ class SJ.Main
     @audioProcessor = new SJ.AudioProcessor()
 
     @webGLController = 
-      new SJ.WebGLController(canvas[0], new SJ.ShaderLoader(), 
+      new SJ.WebGLController(@canvas[0], new SJ.ShaderLoader(), 
         @audioProcessor.mAudioEventObservable)
 
-    Rx.DOM.click canvas[0]
+    Rx.DOM.click @canvas[0]
       .subscribe f(@webGLController, 'addTouchEvent')
 
     @libraryView = new SJ.LibraryView($('body'))
@@ -103,3 +105,10 @@ class SJ.Main
 
   nextShader: () ->
     @queueView.next()
+
+  onResize: () ->
+    @canvas.width window.innerWidth
+    @canvas.height window.innerHeight
+    @canvas[0].width = window.innerWidth
+    @canvas[0].height = window.innerHeight
+
