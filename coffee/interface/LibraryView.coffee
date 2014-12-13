@@ -1,5 +1,5 @@
 class SJ.LibraryView
-  @shaders: ["simple", "fft_matrix_product", "circular_fft"]
+  @shaders: ["simple", "fft_matrix_product", "circular_fft", "vertical_wav"]
 
   constructor: (target) ->
     @container = $ "<div></div>",

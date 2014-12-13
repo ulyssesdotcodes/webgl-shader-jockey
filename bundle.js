@@ -801,7 +801,7 @@ SJ.AudioView = (function() {
 
 },{}],9:[function(require,module,exports){
 SJ.LibraryView = (function() {
-  LibraryView.shaders = ["simple", "fft_matrix_product", "circular_fft"];
+  LibraryView.shaders = ["simple", "fft_matrix_product", "circular_fft", "vertical_wav"];
 
   function LibraryView(target) {
     var shader, _i, _len, _ref;
