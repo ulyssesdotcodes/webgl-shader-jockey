@@ -36,6 +36,10 @@ class SJ.Viewer
       .map f.get('data')
       .subscribe f(audioEventObeservable, 'onNext')
 
+    messageObservable.filter (m) -> m.type == "touchEvent"
+      .map f.get('data')
+      .subscribe f(@webGLController.addTouchEvent)
+
     return
 
   update: (audioEvent) ->

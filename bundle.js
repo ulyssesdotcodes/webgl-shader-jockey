@@ -126,6 +126,7 @@ SJ.Main = (function() {
   };
 
   function Main() {
+    var canvasClickObservable;
     this.canvas = $("<canvas>", {
       "class": 'fullscreen',
       width: window.innerWidth,
@@ -145,13 +146,27 @@ SJ.Main = (function() {
     this.player.setPlayer(this.audioView.audioPlayer);
     this.audioProcessor = new SJ.AudioProcessor();
     this.webGLController = new SJ.WebGLController(this.canvas[0], new SJ.ShaderLoader(), this.audioProcessor.mAudioEventObservable);
-    Rx.DOM.click(this.canvas[0]).subscribe(f(this.webGLController, 'addTouchEvent'));
+    canvasClickObservable = Rx.DOM.click(this.canvas[0]).map((function(_this) {
+      return function(e) {
+        return {
+          x: e.clientX / _this.canvas[0].clientWidth,
+          y: 1.0 - (e.clientY / _this.canvas[0].clientHeight)
+        };
+      };
+    })(this));
+    canvasClickObservable.subscribe(f(this.webGLController.addTouchEvent));
     this.libraryView = new SJ.LibraryView($('body'));
     this.libraryView.shaderSelectionSubject.subscribe(f(this.queueView, "addShader"));
     this.popupMessageSubject = new Rx.BehaviorSubject({
       type: 'shader',
       data: "simple"
     });
+    canvasClickObservable.map(function(me) {
+      return {
+        type: 'touchEvent',
+        data: me
+      };
+    }).subscribe(f(this.popupMessageSubject, 'onNext'));
     this.queueView.mShaderNextSubject.subscribe(f(this.webGLController, 'loadShader'));
     this.queueView.mShaderNextSubject.map(function(shader) {
       return {
@@ -522,6 +537,9 @@ SJ.Viewer = (function() {
     messageObservable.filter(function(m) {
       return m.type === "audioEvent";
     }).map(f.get('data')).subscribe(f(audioEventObeservable, 'onNext'));
+    messageObservable.filter(function(m) {
+      return m.type === "touchEvent";
+    }).map(f.get('data')).subscribe(f(this.webGLController.addTouchEvent));
     return;
   }
 
@@ -701,10 +719,16 @@ SJ.WebGLController = (function() {
     return _results;
   };
 
-  WebGLController.prototype.addTouchEvent = function(e) {
-    return this.audioEventObservable.take(1).zip(Rx.Observable.just(e.clientX).map(f.div(this.canvas.clientWidth)), Rx.Observable.just(e.clientY).map(f.compose((function(a) {
-      return 1.0 - a;
-    }), f.div(this.canvas.clientHeight))), function(ae, ex, ey) {
+  WebGLController.prototype.addTouchEvent = function() {
+    var x, y;
+    if (arguments[0].x != null) {
+      x = arguments[0].x;
+      y = arguments[0].y;
+    } else {
+      x = arguments[0];
+      y = arguments[1];
+    }
+    return this.audioEventObservable.take(1).zip(Rx.Observable.just(x), Rx.Observable.just(y), function(ae, ex, ey) {
       return [ex, ey, ae.time / 1000.0];
     }).subscribe((function(_this) {
       return function(te) {

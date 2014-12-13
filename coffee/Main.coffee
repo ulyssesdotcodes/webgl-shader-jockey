@@ -50,13 +50,20 @@ class SJ.Main
       new SJ.WebGLController(@canvas[0], new SJ.ShaderLoader(), 
         @audioProcessor.mAudioEventObservable)
 
-    Rx.DOM.click @canvas[0]
-      .subscribe f(@webGLController, 'addTouchEvent')
+    canvasClickObservable = 
+      Rx.DOM.click @canvas[0]
+        .map (e) => { x: e.clientX / @canvas[0].clientWidth, y: 1.0 - (e.clientY / @canvas[0].clientHeight) }
+
+    canvasClickObservable.subscribe f(@webGLController.addTouchEvent)
 
     @libraryView = new SJ.LibraryView($('body'))
     @libraryView.shaderSelectionSubject.subscribe f(@queueView, "addShader")
 
     @popupMessageSubject = new Rx.BehaviorSubject({type: 'shader', data: "simple"})
+    
+    canvasClickObservable
+      .map (me) -> { type: 'touchEvent', data: me }
+      .subscribe f(@popupMessageSubject, 'onNext')
 
     @queueView.mShaderNextSubject.subscribe f(@webGLController, 'loadShader')
     @queueView.mShaderNextSubject.map (shader) -> { type: 'shader', data: shader }

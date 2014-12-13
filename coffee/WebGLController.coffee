@@ -129,12 +129,17 @@ class SJ.WebGLController
     for i in [0...@touchEvents.length]
       @touchEvents[i] = 0.0
 
-  addTouchEvent: (e) =>
+  addTouchEvent: () =>
+    if arguments[0].x?
+      x = arguments[0].x
+      y = arguments[0].y
+    else
+      x = arguments[0]
+      y = arguments[1]
     
     # Map the canvas mouse coordinates to the gl viewport
     @audioEventObservable.take(1).zip \
-      Rx.Observable.just(e.clientX).map(f.div(@canvas.clientWidth)),
-      Rx.Observable.just(e.clientY).map(f.compose(((a) -> 1.0 - a), f.div(@canvas.clientHeight))),
+      Rx.Observable.just(x), Rx.Observable.just(y), 
         (ae, ex, ey) -> [ex, ey, ae.time / 1000.0]
       .subscribe (te) =>
         @touchEvents.splice(@touchEventIndex * 3, 3, te[0], te[1], te[2])
