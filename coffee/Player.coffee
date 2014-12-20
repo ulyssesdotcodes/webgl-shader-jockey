@@ -99,7 +99,7 @@ class SJ.Player
   setPlayer: (@player) ->
     @source = @audioContext.createMediaElementSource(@player[0])
     @source.connect(@analyser)
-    @analyser.connect(@audioContext.destination)
+    @source.connect(@audioContext.destination)
     @playing = true
     @pauseMic()
 

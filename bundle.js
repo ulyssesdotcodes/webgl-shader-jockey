@@ -360,7 +360,7 @@ SJ.Player = (function() {
     this.player = player;
     this.source = this.audioContext.createMediaElementSource(this.player[0]);
     this.source.connect(this.analyser);
-    this.analyser.connect(this.audioContext.destination);
+    this.source.connect(this.audioContext.destination);
     this.playing = true;
     return this.pauseMic();
   };
@@ -1028,6 +1028,12 @@ f = require('./to-function');
 
 objRequires = [require('./math'), require('./logic'), require('./objects'), require('./relations'), require('./functions')];
 
+f['overloaded'] = require('./overloaded');
+
+f['curried'] = require('./curried');
+
+f['prime'] = require('./prime');
+
 for (_i = 0, _len = objRequires.length; _i < _len; _i++) {
   obj = objRequires[_i];
   for (key in obj) {
@@ -1036,12 +1042,6 @@ for (_i = 0, _len = objRequires.length; _i < _len; _i++) {
     f[key] = value;
   }
 }
-
-f.overloaded = require('./overloaded');
-
-f.curried = require('./curried');
-
-f.prime = require('./prime');
 
 aliases = {
   sub: 'subtract',
