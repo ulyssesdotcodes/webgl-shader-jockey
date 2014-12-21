@@ -20,12 +20,14 @@ class SJ.Player
       @startOffset += @audioContext.currentTime - @startTime
       @player.bind "play", () =>
         @source.connect @analyser
+        @source.connect @audioContext.destination
         @playing = true
         if @miked
           @pauseMic()
 
     else if @player?
       @source.connect @analyser
+      @source.connect @audioContext.destination
       @player[0].play()
       @playing = true
 

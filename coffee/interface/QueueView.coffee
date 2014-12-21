@@ -7,15 +7,20 @@ class SJ.QueueView
 
     target.append @queueList
 
-    @nextButton = $ "<a />",
+    nextButton = $ "<a />",
       href: '#'
       class: "next-button"
-      text: ">>>>>>"
-    @nextButton.click (e) =>
+
+    nextButtonIcon = $ "<img />",
+      src: "./resources/ic_fast_forward_white_48dp.png"
+
+    nextButton.append nextButtonIcon
+    
+    nextButton.click (e) =>
       e.preventDefault()
       @next()
 
-    target.append @nextButton
+    target.append nextButton
 
     @mShaderNextSubject = new Rx.BehaviorSubject("simple")
 

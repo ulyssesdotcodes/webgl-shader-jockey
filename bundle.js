@@ -126,7 +126,7 @@ SJ.Main = (function() {
   };
 
   function Main() {
-    var canvasClickObservable;
+    var canvasClickObservable, viewerButton, viewerButtonIcon;
     this.canvas = $("<canvas>", {
       "class": 'fullscreen',
       width: window.innerWidth,
@@ -183,24 +183,27 @@ SJ.Main = (function() {
     this.soundCloudLoader = new SJ.SoundCloudLoader(this.audioView);
     this.audioView.mURLObservable.filter(f.eq(SJ.AudioView.micUrl)).subscribe(f(this.player, 'createLiveInput'));
     this.audioView.mURLObservable.filter(f.neq(SJ.AudioView.micUrl)).subscribe(f(this.soundCloudLoader, 'loadStream'));
-    this.viewerButton = $("<a></a>", {
+    viewerButton = $("<a></a>", {
       "class": 'viewer-button',
-      href: '#',
-      text: 'viewer'
+      href: '#'
     });
-    Rx.DOM.click(this.viewerButton[0]).subscribe((function(_this) {
+    viewerButtonIcon = $("<img />", {
+      src: "./resources/ic_fullscreen_white_48dp.png"
+    });
+    viewerButton.append(viewerButtonIcon);
+    Rx.DOM.click(viewerButton[0]).subscribe((function(_this) {
       return function(e) {
         var popupUrl;
         e.preventDefault();
         _this.domain = window.location.protocol + '//' + window.location.host;
         popupUrl = location.pathname + 'viewer.html';
-        _this.popup = window.open(popupUrl, 'viewerWindow');
+        _this.popup = window.open(popupUrl, 'viewerWindow', "height=" + window.innerHeight + ",width=" + window.innerWidth);
         _this.popupMessageSubject.subscribe(function(e) {
           return _this.popup.postMessage(e, _this.domain);
         });
       };
     })(this));
-    $('body').append(this.viewerButton);
+    $('body').append(viewerButton);
     this.animate();
   }
 
@@ -259,6 +262,7 @@ SJ.Player = (function() {
       return this.player.bind("play", (function(_this) {
         return function() {
           _this.source.connect(_this.analyser);
+          _this.source.connect(_this.audioContext.destination);
           _this.playing = true;
           if (_this.miked) {
             return _this.pauseMic();
@@ -267,6 +271,7 @@ SJ.Player = (function() {
       })(this));
     } else if (this.player != null) {
       this.source.connect(this.analyser);
+      this.source.connect(this.audioContext.destination);
       this.player[0].play();
       this.playing = true;
       if (this.miked) {
@@ -837,23 +842,27 @@ SJ.LibraryView = (function() {
 },{}],10:[function(require,module,exports){
 SJ.QueueView = (function() {
   function QueueView(target) {
+    var nextButton, nextButtonIcon;
     this.queue = [];
     this.queueList = $("<div>", {
       "class": "queue-list"
     });
     target.append(this.queueList);
-    this.nextButton = $("<a />", {
+    nextButton = $("<a />", {
       href: '#',
-      "class": "next-button",
-      text: ">>>>>>"
+      "class": "next-button"
     });
-    this.nextButton.click((function(_this) {
+    nextButtonIcon = $("<img />", {
+      src: "./resources/ic_fast_forward_white_48dp.png"
+    });
+    nextButton.append(nextButtonIcon);
+    nextButton.click((function(_this) {
       return function(e) {
         e.preventDefault();
         return _this.next();
       };
     })(this));
-    target.append(this.nextButton);
+    target.append(nextButton);
     this.mShaderNextSubject = new Rx.BehaviorSubject("simple");
   }
 
@@ -1028,12 +1037,6 @@ f = require('./to-function');
 
 objRequires = [require('./math'), require('./logic'), require('./objects'), require('./relations'), require('./functions')];
 
-f['overloaded'] = require('./overloaded');
-
-f['curried'] = require('./curried');
-
-f['prime'] = require('./prime');
-
 for (_i = 0, _len = objRequires.length; _i < _len; _i++) {
   obj = objRequires[_i];
   for (key in obj) {
@@ -1042,6 +1045,12 @@ for (_i = 0, _len = objRequires.length; _i < _len; _i++) {
     f[key] = value;
   }
 }
+
+f.overloaded = require('./overloaded');
+
+f.curried = require('./curried');
+
+f.prime = require('./prime');
 
 aliases = {
   sub: 'subtract',

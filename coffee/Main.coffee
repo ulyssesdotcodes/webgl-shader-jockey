@@ -81,22 +81,26 @@ class SJ.Main
     @audioView.mURLObservable.filter f.neq(SJ.AudioView.micUrl)
       .subscribe f(@soundCloudLoader, 'loadStream')
 
-    @viewerButton = $ "<a></a>",
+    viewerButton = $ "<a></a>",
       class: 'viewer-button'
       href: '#'
-      text: 'viewer'
 
-    Rx.DOM.click @viewerButton[0]
+    viewerButtonIcon = $ "<img />",
+      src: "./resources/ic_fullscreen_white_48dp.png"
+
+    viewerButton.append viewerButtonIcon
+
+    Rx.DOM.click viewerButton[0]
       .subscribe (e) =>
         e.preventDefault()
         @domain = window.location.protocol + '//' + window.location.host
         popupUrl = location.pathname + 'viewer.html'
-        @popup = window.open(popupUrl, 'viewerWindow')
+        @popup = window.open(popupUrl, 'viewerWindow', "height=#{window.innerHeight},width=#{window.innerWidth}")
         @popupMessageSubject.subscribe (e) =>
           @popup.postMessage e, @domain
         return
 
-    $('body').append @viewerButton
+    $('body').append viewerButton
     
     @animate()
 
