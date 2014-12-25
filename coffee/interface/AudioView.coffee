@@ -11,6 +11,7 @@ class SJ.AudioView
 
     @mic = $ "<a>",
       href: '#'
+      class: 'mic-icon'
     
     micIcon = $ "<img/>",
       class: "icon"
@@ -26,13 +27,21 @@ class SJ.AudioView
       e.preventDefault()
       @mURLObservable.onNext SJ.AudioView.micUrl
 
-    @input = $ "<input>",
+    soundcloudInput = $ "<div>",
+      class: 'soundcloud'
+
+    soundcloudInput.append 'Soundcloud URL:'
+
+    input = $ "<input>",
       class: 'soundcloud-input'
       type: "text"
-    @controls.append @input
 
-    @input.change (e) =>
-      @mURLObservable.onNext @input.val()
+    input.change (e) =>
+      @mURLObservable.onNext input.val()
+
+    soundcloudInput.append input
+
+    @controls.append soundcloudInput
 
     @controls.append @audioPlayer
     target.append @controls

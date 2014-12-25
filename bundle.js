@@ -754,7 +754,7 @@ SJ.AudioView = (function() {
   AudioView.micUrl = "mic";
 
   function AudioView(target, url) {
-    var micIcon, startUrl;
+    var input, micIcon, soundcloudInput, startUrl;
     this.audioPlayer = $("<audio />", {
       "class": 'audio-player',
       controls: true
@@ -763,7 +763,8 @@ SJ.AudioView = (function() {
       "class": 'audio-controls'
     });
     this.mic = $("<a>", {
-      href: '#'
+      href: '#',
+      "class": 'mic-icon'
     });
     micIcon = $("<img/>", {
       "class": "icon",
@@ -779,16 +780,21 @@ SJ.AudioView = (function() {
         return _this.mURLObservable.onNext(SJ.AudioView.micUrl);
       };
     })(this));
-    this.input = $("<input>", {
+    soundcloudInput = $("<div>", {
+      "class": 'soundcloud'
+    });
+    soundcloudInput.append('Soundcloud URL:');
+    input = $("<input>", {
       "class": 'soundcloud-input',
       type: "text"
     });
-    this.controls.append(this.input);
-    this.input.change((function(_this) {
+    input.change((function(_this) {
       return function(e) {
-        return _this.mURLObservable.onNext(_this.input.val());
+        return _this.mURLObservable.onNext(input.val());
       };
     })(this));
+    soundcloudInput.append(input);
+    this.controls.append(soundcloudInput);
     this.controls.append(this.audioPlayer);
     target.append(this.controls);
   }
@@ -842,18 +848,24 @@ SJ.LibraryView = (function() {
 },{}],10:[function(require,module,exports){
 SJ.QueueView = (function() {
   function QueueView(target) {
-    var nextButton, nextButtonIcon;
+    var nextButton, nextButtonIcon, queueContainer;
     this.queue = [];
+    queueContainer = $("<div>", {
+      "class": "queue-container"
+    });
+    queueContainer.append("Shader queue:");
     this.queueList = $("<div>", {
       "class": "queue-list"
     });
-    target.append(this.queueList);
+    queueContainer.append(this.queueList);
+    target.append(queueContainer);
     nextButton = $("<a />", {
       href: '#',
       "class": "next-button"
     });
     nextButtonIcon = $("<img />", {
-      src: "./resources/ic_fast_forward_white_48dp.png"
+      src: "./resources/ic_fast_forward_white_48dp.png",
+      "class": 'icon'
     });
     nextButton.append(nextButtonIcon);
     nextButton.click((function(_this) {
@@ -1037,6 +1049,12 @@ f = require('./to-function');
 
 objRequires = [require('./math'), require('./logic'), require('./objects'), require('./relations'), require('./functions')];
 
+f['overloaded'] = require('./overloaded');
+
+f['curried'] = require('./curried');
+
+f['prime'] = require('./prime');
+
 for (_i = 0, _len = objRequires.length; _i < _len; _i++) {
   obj = objRequires[_i];
   for (key in obj) {
@@ -1045,12 +1063,6 @@ for (_i = 0, _len = objRequires.length; _i < _len; _i++) {
     f[key] = value;
   }
 }
-
-f.overloaded = require('./overloaded');
-
-f.curried = require('./curried');
-
-f.prime = require('./prime');
 
 aliases = {
   sub: 'subtract',

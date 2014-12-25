@@ -2,10 +2,17 @@ class SJ.QueueView
   constructor: (target) ->
     @queue = []
 
+    queueContainer = $ "<div>",
+      class: "queue-container"
+
+    queueContainer.append "Shader queue:"
+
     @queueList = $ "<div>",
       class: "queue-list"
 
-    target.append @queueList
+    queueContainer.append @queueList
+
+    target.append queueContainer
 
     nextButton = $ "<a />",
       href: '#'
@@ -13,6 +20,7 @@ class SJ.QueueView
 
     nextButtonIcon = $ "<img />",
       src: "./resources/ic_fast_forward_white_48dp.png"
+      class: 'icon'
 
     nextButton.append nextButtonIcon
     
