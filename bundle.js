@@ -159,7 +159,7 @@ SJ.Main = (function() {
     this.libraryView.shaderSelectionSubject.subscribe(f(this.queueView, "addShader"));
     this.popupMessageSubject = new Rx.BehaviorSubject({
       type: 'shader',
-      data: "simple"
+      data: "circular_fft"
     });
     canvasClickObservable.map(function(me) {
       return {
@@ -875,7 +875,7 @@ SJ.QueueView = (function() {
       };
     })(this));
     target.append(nextButton);
-    this.mShaderNextSubject = new Rx.BehaviorSubject("simple");
+    this.mShaderNextSubject = new Rx.BehaviorSubject("circular_fft");
   }
 
   QueueView.prototype.addShader = function(shader) {

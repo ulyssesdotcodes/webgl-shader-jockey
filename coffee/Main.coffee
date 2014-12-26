@@ -59,7 +59,7 @@ class SJ.Main
     @libraryView = new SJ.LibraryView($('body'))
     @libraryView.shaderSelectionSubject.subscribe f(@queueView, "addShader")
 
-    @popupMessageSubject = new Rx.BehaviorSubject({type: 'shader', data: "simple"})
+    @popupMessageSubject = new Rx.BehaviorSubject({type: 'shader', data: "circular_fft"})
     
     canvasClickObservable
       .map (me) -> { type: 'touchEvent', data: me }

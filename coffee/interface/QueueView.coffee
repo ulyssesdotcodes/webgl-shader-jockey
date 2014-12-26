@@ -30,7 +30,7 @@ class SJ.QueueView
 
     target.append nextButton
 
-    @mShaderNextSubject = new Rx.BehaviorSubject("simple")
+    @mShaderNextSubject = new Rx.BehaviorSubject("circular_fft")
 
   addShader: (shader) ->
     if !shader then return
