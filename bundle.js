@@ -119,6 +119,8 @@ require('./interface/LibraryView.coffee');
 
 require('./interface/QueueView.coffee');
 
+require('./interface/ColorModView.coffee');
+
 SJ.Main = (function() {
   Main.prototype.shortcuts = {
     32: "playPause",
@@ -146,6 +148,15 @@ SJ.Main = (function() {
     this.player.setPlayer(this.audioView.audioPlayer);
     this.audioProcessor = new SJ.AudioProcessor();
     this.webGLController = new SJ.WebGLController(this.canvas[0], new SJ.ShaderLoader(), this.audioProcessor.mAudioEventObservable);
+    this.colorModView = new SJ.ColorModView($('body'), (function(_this) {
+      return function(v) {
+        var newCM;
+        newCM = _this.colorModView.getColorModArray().map(function(num) {
+          return num * 0.5;
+        });
+        return _this.webGLController.setColorMod(newCM);
+      };
+    })(this));
     canvasClickObservable = Rx.DOM.click(this.canvas[0]).map((function(_this) {
       return function(e) {
         return {
@@ -237,7 +248,7 @@ SJ.Main = (function() {
 
 
 
-},{"../node_modules/effing/src/index.coffee":14,"./AudioProcessor.coffee":1,"./Player.coffee":3,"./ShaderLoader.coffee":4,"./SoundCloudLoader.coffee":5,"./Viewer.coffee":6,"./WebGLController.coffee":7,"./interface/AudioView.coffee":8,"./interface/LibraryView.coffee":9,"./interface/QueueView.coffee":10}],3:[function(require,module,exports){
+},{"../node_modules/effing/src/index.coffee":15,"./AudioProcessor.coffee":1,"./Player.coffee":3,"./ShaderLoader.coffee":4,"./SoundCloudLoader.coffee":5,"./Viewer.coffee":6,"./WebGLController.coffee":7,"./interface/AudioView.coffee":8,"./interface/ColorModView.coffee":9,"./interface/LibraryView.coffee":10,"./interface/QueueView.coffee":11}],3:[function(require,module,exports){
 SJ.Player = (function() {
   function Player() {
     this.loadedAudio = new Array();
@@ -586,12 +597,13 @@ SJ.WebGLController = (function() {
     this.texture.tex = this.gl.createTexture();
     this.createAudioTexture(this.texture.tex);
     this.gl.viewport(0, 0, canvas.clientWidth, canvas.clientHeight);
-    this.gl.clearColor(0.0, 0.0, 0.0, 0.0);
+    this.gl.clearColor(0.0, 0.0, 0.0, 1.0);
     this.gl.enable(this.gl.DEPTH_TEST);
     this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
     this.audioEventObservable.subscribe(f(this, 'update'));
     this.touchEvents = new Array(SJ.WebGLController.touchEventCount * 3);
     this.resetTouchEvents();
+    this.colorMod = [1.0, 1.0, 1.0];
   }
 
   WebGLController.prototype.loadShader = function(name) {
@@ -623,6 +635,7 @@ SJ.WebGLController = (function() {
         _this.cacheUniformLocation(program, 'resolution');
         _this.cacheUniformLocation(program, 'audioTexture');
         _this.cacheUniformLocation(program, 'te');
+        _this.cacheUniformLocation(program, 'colorMod');
         _this.vertexPosition = _this.gl.getAttribLocation(program, "position");
         _this.gl.enableVertexAttribArray(_this.vertexPosition);
         return program;
@@ -645,6 +658,7 @@ SJ.WebGLController = (function() {
     this.gl.uniform1f(this.program.uniformsCache['time'], audioEvent.time / 1000.0);
     this.gl.uniform1i(this.program.uniformsCache['audioTexture'], 0);
     this.gl.uniform3fv(this.program.uniformsCache['te'], this.touchEvents);
+    this.gl.uniform3fv(this.program.uniformsCache['colorMod'], this.colorMod);
     this.mapAudioToArray(audioEvent, this.texture.arr);
     this.gl.activeTexture(this.gl.TEXTURE0);
     this.gl.bindTexture(this.gl.TEXTURE_2D, this.texture.tex);
@@ -743,6 +757,10 @@ SJ.WebGLController = (function() {
     })(this));
   };
 
+  WebGLController.prototype.setColorMod = function(colorMod) {
+    return this.colorMod = colorMod;
+  };
+
   return WebGLController;
 
 })();
@@ -811,6 +829,39 @@ SJ.AudioView = (function() {
 
 
 },{}],9:[function(require,module,exports){
+SJ.ColorModView = (function() {
+  function ColorModView(target, onChange) {
+    var bC, gC, gui, rC;
+    this.colorMod = {
+      red: 1.0,
+      green: 1.0,
+      blue: 1.0
+    };
+    gui = new dat.GUI();
+    rC = gui.add(this.colorMod, "red", 0, 2);
+    gC = gui.add(this.colorMod, "green", 0, 2);
+    bC = gui.add(this.colorMod, "blue", 0, 2);
+    rC.onChange(onChange);
+    gC.onChange(onChange);
+    bC.onChange(onChange);
+  }
+
+  ColorModView.prototype.getColorModArray = function() {
+    var arr;
+    arr = new Array();
+    arr.push(this.colorMod.red);
+    arr.push(this.colorMod.green);
+    arr.push(this.colorMod.blue);
+    return arr;
+  };
+
+  return ColorModView;
+
+})();
+
+
+
+},{}],10:[function(require,module,exports){
 SJ.LibraryView = (function() {
   LibraryView.shaders = ["simple", "fft_matrix_product", "circular_fft", "vertical_wav"];
 
@@ -845,7 +896,7 @@ SJ.LibraryView = (function() {
 
 
 
-},{}],10:[function(require,module,exports){
+},{}],11:[function(require,module,exports){
 SJ.QueueView = (function() {
   function QueueView(target) {
     var nextButton, nextButtonIcon, queueContainer;
@@ -908,7 +959,7 @@ SJ.QueueView = (function() {
 
 
 
-},{}],11:[function(require,module,exports){
+},{}],12:[function(require,module,exports){
 var curry, overloaded,
   __hasProp = {}.hasOwnProperty;
 
@@ -940,7 +991,7 @@ module.exports = function(ops) {
 
 
 
-},{"./overloaded":18}],12:[function(require,module,exports){
+},{"./overloaded":19}],13:[function(require,module,exports){
 var curried, f,
   __slice = [].slice;
 
@@ -968,7 +1019,7 @@ module.exports = curried;
 
 
 
-},{"./to-function":21}],13:[function(require,module,exports){
+},{"./to-function":22}],14:[function(require,module,exports){
 var f, prime,
   __slice = [].slice;
 
@@ -1041,19 +1092,13 @@ module.exports = {
 
 
 
-},{"./prime":19,"./to-function":21}],14:[function(require,module,exports){
+},{"./prime":20,"./to-function":22}],15:[function(require,module,exports){
 var aliases, f, key, newName, obj, objRequires, oldName, value, _i, _len,
   __hasProp = {}.hasOwnProperty;
 
 f = require('./to-function');
 
 objRequires = [require('./math'), require('./logic'), require('./objects'), require('./relations'), require('./functions')];
-
-f['overloaded'] = require('./overloaded');
-
-f['curried'] = require('./curried');
-
-f['prime'] = require('./prime');
 
 for (_i = 0, _len = objRequires.length; _i < _len; _i++) {
   obj = objRequires[_i];
@@ -1063,6 +1108,12 @@ for (_i = 0, _len = objRequires.length; _i < _len; _i++) {
     f[key] = value;
   }
 }
+
+f.overloaded = require('./overloaded');
+
+f.curried = require('./curried');
+
+f.prime = require('./prime');
 
 aliases = {
   sub: 'subtract',
@@ -1086,7 +1137,7 @@ module.exports = f;
 
 
 
-},{"./curried":12,"./functions":13,"./logic":15,"./math":16,"./objects":17,"./overloaded":18,"./prime":19,"./relations":20,"./to-function":21}],15:[function(require,module,exports){
+},{"./curried":13,"./functions":14,"./logic":16,"./math":17,"./objects":18,"./overloaded":19,"./prime":20,"./relations":21,"./to-function":22}],16:[function(require,module,exports){
 var operators;
 
 operators = require('./binary-operators');
@@ -1106,7 +1157,7 @@ module.exports.not = function(a) {
 
 
 
-},{"./binary-operators":11}],16:[function(require,module,exports){
+},{"./binary-operators":12}],17:[function(require,module,exports){
 var operators;
 
 operators = require('./binary-operators');
@@ -1141,7 +1192,7 @@ module.exports.negate = function(a) {
 
 
 
-},{"./binary-operators":11}],17:[function(require,module,exports){
+},{"./binary-operators":12}],18:[function(require,module,exports){
 var curried,
   __slice = [].slice;
 
@@ -1163,7 +1214,7 @@ module.exports = {
 
 
 
-},{"./curried":12}],18:[function(require,module,exports){
+},{"./curried":13}],19:[function(require,module,exports){
 var biggestSmallerThanOrEqualTo, f,
   __hasProp = {}.hasOwnProperty;
 
@@ -1220,7 +1271,7 @@ module.exports = function(originalMap) {
 
 
 
-},{"./to-function":21}],19:[function(require,module,exports){
+},{"./to-function":22}],20:[function(require,module,exports){
 var f, seq,
   __slice = [].slice;
 
@@ -1263,7 +1314,7 @@ module.exports = function(_arg) {
 
 
 
-},{"./to-function":21}],20:[function(require,module,exports){
+},{"./to-function":22}],21:[function(require,module,exports){
 var operators;
 
 operators = require('./binary-operators');
@@ -1291,7 +1342,7 @@ module.exports = operators({
 
 
 
-},{"./binary-operators":11}],21:[function(require,module,exports){
+},{"./binary-operators":12}],22:[function(require,module,exports){
 var isArray, isFunction, isString, noop, toFunction, _ref,
   __slice = [].slice;
 

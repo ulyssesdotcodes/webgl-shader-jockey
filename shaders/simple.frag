@@ -4,6 +4,7 @@ uniform sampler2D audioTexture;
 uniform float time;
 uniform vec2 resolution;
 uniform vec3 te[TOUCH_EVENT_COUNT];
+uniform vec3 colormod;
 
 void main() {
   vec2 vUv = gl_FragCoord.xy / resolution.xy;

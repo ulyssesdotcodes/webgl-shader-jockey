@@ -18,13 +18,14 @@ class SJ.WebGLController
     @createAudioTexture @texture.tex
     
     @gl.viewport(0, 0, canvas.clientWidth, canvas.clientHeight)
-    @gl.clearColor(0.0, 0.0, 0.0, 0.0)
+    @gl.clearColor(0.0, 0.0, 0.0, 1.0)
     @gl.enable(@gl.DEPTH_TEST)
     @gl.clear(@gl.COLOR_BUFFER_BIT | @gl.DEPTH_BUFFER_BIT)
 
     @audioEventObservable.subscribe f(@, 'update')
     @touchEvents = new Array(SJ.WebGLController.touchEventCount * 3)
     @resetTouchEvents()
+    @colorMod = [1.0, 1.0, 1.0]
 
   loadShader: (name) ->
     if !name? then return
@@ -51,6 +52,7 @@ class SJ.WebGLController
         @cacheUniformLocation program, 'resolution'
         @cacheUniformLocation program, 'audioTexture'
         @cacheUniformLocation program, 'te'
+        @cacheUniformLocation program, 'colorMod'
         
         @vertexPosition = @gl.getAttribLocation program, "position"
         @gl.enableVertexAttribArray @vertexPosition
@@ -68,6 +70,7 @@ class SJ.WebGLController
     @gl.uniform1f @program.uniformsCache['time'], (audioEvent.time) / 1000.0
     @gl.uniform1i @program.uniformsCache['audioTexture'], 0
     @gl.uniform3fv @program.uniformsCache['te'], @touchEvents
+    @gl.uniform3fv @program.uniformsCache['colorMod'], @colorMod
 
     @mapAudioToArray audioEvent, @texture.arr
 
@@ -145,3 +148,6 @@ class SJ.WebGLController
         @touchEvents.splice(@touchEventIndex * 3, 3, te[0], te[1], te[2])
 
         @touchEventIndex = ++@touchEventIndex % SJ.WebGLController.touchEventCount
+
+  setColorMod: (colorMod) ->
+    @colorMod = colorMod

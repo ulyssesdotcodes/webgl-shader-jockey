@@ -1,0 +1,17 @@
+    @texture = { arr: new Uint8Array(SJ.AudioProcessor.bufferSize * 4) }
+    @gl = @canvas.getContext("experimental-webgl")
+    @buffer = @gl.createBuffer()
+    @gl.bindBuffer @gl.ARRAY_BUFFER, @buffer
+    @gl.bufferData @gl.ARRAY_BUFFER
+        , new Float32Array([ -1.0, -1.0, 1.0, -1.0,
+        -1.0, 1.0, 1.0, -1.0,
+        1.0, 1.0, - 1.0, 1.0])
+        , @gl.STATIC_DRAW
+
+    @texture.tex = @gl.createTexture()
+    @createAudioTexture @texture.tex
+    
+    @gl.viewport(0, 0, canvas.clientWidth, canvas.clientHeight)
+    @gl.clearColor(0.0, 0.0, 0.0, 0.0)
+    @gl.enable(@gl.DEPTH_TEST)
+    @gl.clear(@gl.COLOR_BUFFER_BIT | @gl.DEPTH_BUFFER_BIT)

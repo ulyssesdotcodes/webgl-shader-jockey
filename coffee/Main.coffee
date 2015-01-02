@@ -11,6 +11,7 @@ require './Player.coffee'
 require './interface/AudioView.coffee'
 require './interface/LibraryView.coffee'
 require './interface/QueueView.coffee'
+require './interface/ColorModView.coffee'
 
 class SJ.Main
   shortcuts:
@@ -40,7 +41,7 @@ class SJ.Main
     @audioView = new SJ.AudioView($('body'), window.location.hash.substring(1))
 
     @queueView = new SJ.QueueView $('body')
-    
+
     @player = new SJ.Player()
     @player.setPlayer @audioView.audioPlayer
 
@@ -49,6 +50,10 @@ class SJ.Main
     @webGLController = 
       new SJ.WebGLController(@canvas[0], new SJ.ShaderLoader(), 
         @audioProcessor.mAudioEventObservable)
+
+    @colorModView = new SJ.ColorModView $('body'), (v) =>
+      newCM = @colorModView.getColorModArray().map((num) -> num * 0.5)
+      @webGLController.setColorMod(newCM)
 
     canvasClickObservable = 
       Rx.DOM.click @canvas[0]

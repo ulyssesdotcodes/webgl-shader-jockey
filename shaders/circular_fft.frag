@@ -5,6 +5,7 @@ uniform vec2 resolution;
 uniform float audioResolution;
 uniform float time;
 uniform vec3 te[TOUCH_EVENT_COUNT];
+uniform vec3 colorMod;
 
 vec4 fromPos(in vec2 uv, in vec3 tuv) {
     // Convert to polar
@@ -30,5 +31,5 @@ void main(void)
       color = color + fromPos(uv, te[i]);
     }
 
-    gl_FragColor = color;
+    gl_FragColor = color * vec4(colorMod * 2.0, 1.0);
 }
