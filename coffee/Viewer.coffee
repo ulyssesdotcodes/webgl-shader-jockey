@@ -24,7 +24,7 @@ class SJ.Viewer
     @webGLController = new SJ.WebGLController(@canvas[0], new SJ.ShaderLoader(), audioEventObeservable)
 
     @domain = window.location.protocol + '//' + window.location.host
-    messageObservable =  Rx.DOM.fromEvent(window, 'message')
+    messageObservable = Rx.DOM.fromEvent(window, 'message')
       .filter (e) => e.origin == @domain
       .map f.get('data')
 
@@ -38,7 +38,11 @@ class SJ.Viewer
 
     messageObservable.filter (m) -> m.type == "touchEvent"
       .map f.get('data')
-      .subscribe f(@webGLController.addTouchEvent)
+      .subscribe f(@, 'addTouchEvent')
+
+    messageObservable.filter (m) -> m.type == "colorMod"
+      .map f.get('data')
+      .subscribe f(@, 'setColorMod')
 
     return
 
@@ -47,3 +51,9 @@ class SJ.Viewer
 
   updateShader: (shader) ->
     @webGLController.loadShader shader
+
+  addTouchEvent: (touchEvent) ->
+    @webGLController.addTouchEvent touchEvent
+
+  setColorMod: (newCM) ->
+    @webGLController.setColorMod newCM

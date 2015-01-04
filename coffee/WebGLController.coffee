@@ -128,11 +128,11 @@ class SJ.WebGLController
     for i in [1..buffer.length]
       out[i * channels + cIndex] = buffer[i]
 
-  resetTouchEvents: () =>
+  resetTouchEvents: () ->
     for i in [0...@touchEvents.length]
       @touchEvents[i] = 0.0
 
-  addTouchEvent: () =>
+  addTouchEvent: () ->
     if arguments[0].x?
       x = arguments[0].x
       y = arguments[0].y

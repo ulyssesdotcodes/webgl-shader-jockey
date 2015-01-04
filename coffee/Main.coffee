@@ -54,12 +54,13 @@ class SJ.Main
     @colorModView = new SJ.ColorModView $('body'), (v) =>
       newCM = @colorModView.getColorModArray().map((num) -> num * 0.5)
       @webGLController.setColorMod(newCM)
+      @popupMessageSubject.onNext({ type: 'colorMod', data: newCM })
 
     canvasClickObservable = 
       Rx.DOM.click @canvas[0]
         .map (e) => { x: e.clientX / @canvas[0].clientWidth, y: 1.0 - (e.clientY / @canvas[0].clientHeight) }
 
-    canvasClickObservable.subscribe f(@webGLController.addTouchEvent)
+    canvasClickObservable.subscribe f(@webGLController, 'addTouchEvent')
 
     @libraryView = new SJ.LibraryView($('body'))
     @libraryView.shaderSelectionSubject.subscribe f(@queueView, "addShader")
@@ -101,7 +102,7 @@ class SJ.Main
         @domain = window.location.protocol + '//' + window.location.host
         popupUrl = location.pathname + 'viewer.html'
         @popup = window.open(popupUrl, 'viewerWindow', "height=#{window.innerHeight},width=#{window.innerWidth}")
-        @popupMessageSubject.subscribe (e) =>
+        @popupMessageSubject.startWith({type: 'shader', data: "circular_fft"}).delay(100).subscribe (e) =>
           @popup.postMessage e, @domain
         return
 

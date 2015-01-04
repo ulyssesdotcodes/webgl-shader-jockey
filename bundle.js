@@ -154,7 +154,11 @@ SJ.Main = (function() {
         newCM = _this.colorModView.getColorModArray().map(function(num) {
           return num * 0.5;
         });
-        return _this.webGLController.setColorMod(newCM);
+        _this.webGLController.setColorMod(newCM);
+        return _this.popupMessageSubject.onNext({
+          type: 'colorMod',
+          data: newCM
+        });
       };
     })(this));
     canvasClickObservable = Rx.DOM.click(this.canvas[0]).map((function(_this) {
@@ -165,7 +169,7 @@ SJ.Main = (function() {
         };
       };
     })(this));
-    canvasClickObservable.subscribe(f(this.webGLController.addTouchEvent));
+    canvasClickObservable.subscribe(f(this.webGLController, 'addTouchEvent'));
     this.libraryView = new SJ.LibraryView($('body'));
     this.libraryView.shaderSelectionSubject.subscribe(f(this.queueView, "addShader"));
     this.popupMessageSubject = new Rx.BehaviorSubject({
@@ -209,7 +213,10 @@ SJ.Main = (function() {
         _this.domain = window.location.protocol + '//' + window.location.host;
         popupUrl = location.pathname + 'viewer.html';
         _this.popup = window.open(popupUrl, 'viewerWindow', "height=" + window.innerHeight + ",width=" + window.innerWidth);
-        _this.popupMessageSubject.subscribe(function(e) {
+        _this.popupMessageSubject.startWith({
+          type: 'shader',
+          data: "circular_fft"
+        }).delay(100).subscribe(function(e) {
           return _this.popup.postMessage(e, _this.domain);
         });
       };
@@ -555,7 +562,10 @@ SJ.Viewer = (function() {
     }).map(f.get('data')).subscribe(f(audioEventObeservable, 'onNext'));
     messageObservable.filter(function(m) {
       return m.type === "touchEvent";
-    }).map(f.get('data')).subscribe(f(this.webGLController.addTouchEvent));
+    }).map(f.get('data')).subscribe(f(this, 'addTouchEvent'));
+    messageObservable.filter(function(m) {
+      return m.type === "colorMod";
+    }).map(f.get('data')).subscribe(f(this, 'setColorMod'));
     return;
   }
 
@@ -567,6 +577,14 @@ SJ.Viewer = (function() {
     return this.webGLController.loadShader(shader);
   };
 
+  Viewer.prototype.addTouchEvent = function(touchEvent) {
+    return this.webGLController.addTouchEvent(touchEvent);
+  };
+
+  Viewer.prototype.setColorMod = function(newCM) {
+    return this.webGLController.setColorMod(newCM);
+  };
+
   return Viewer;
 
 })();
@@ -574,8 +592,6 @@ SJ.Viewer = (function() {
 
 
 },{"./ShaderLoader.coffee":4}],7:[function(require,module,exports){
-var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
-
 SJ.WebGLController = (function() {
   WebGLController.touchEventCount = 10;
 
@@ -583,8 +599,6 @@ SJ.WebGLController = (function() {
     this.canvas = canvas;
     this.shaderLoader = shaderLoader;
     this.audioEventObservable = audioEventObservable;
-    this.addTouchEvent = __bind(this.addTouchEvent, this);
-    this.resetTouchEvents = __bind(this.resetTouchEvents, this);
     this.touchEventIndex = 0;
     this.startTime = Date.now();
     this.texture = {
